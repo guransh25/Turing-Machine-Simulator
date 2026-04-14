@@ -1,0 +1,5 @@
+# GitHub Pages configuration
+# This file tells GitHub Pages to serve index.html from the root
+
+title: Turing Machine Simulator
+description: Interactive Turing Machine Simulator for Theory of Automata & Formal Languages

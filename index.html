@@ -1,0 +1,1799 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Turing Machine Simulator — TAFL</title>
+<meta name="description" content="Interactive Turing Machine Simulator for Theory of Automata & Formal Languages. Build, visualize, and step through custom Turing machines.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+
+/* ── THEME SYSTEM ── */
+[data-theme="dark"]{
+  --bg:#0f172a;--bg2:#1e293b;--bg3:#1a2332;
+  --card:#1e293b;--card2:#273449;--card3:#334155;
+  --accent:#6366f1;--accent2:#818cf8;--accent-dim:rgba(99,102,241,.15);
+  --accent-glow:rgba(99,102,241,.25);
+  --text:#e2e8f0;--muted:#94a3b8;--muted2:#64748b;
+  --border:#334155;--border2:#475569;
+  --accept:#34d399;--accept-bg:rgba(52,211,153,.12);
+  --reject:#f87171;--reject-bg:rgba(248,113,113,.12);
+  --gold:#fbbf24;
+  --shadow:0 1px 3px rgba(0,0,0,.3);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.4);
+  --glass:rgba(30,41,59,.85);
+}
+[data-theme="light"]{
+  --bg:#f8f6f1;--bg2:#ffffff;--bg3:#f1ede5;
+  --card:#ffffff;--card2:#f8f6f1;--card3:#f1ede5;
+  --accent:#4338ca;--accent2:#6366f1;--accent-dim:rgba(67,56,202,.08);
+  --accent-glow:rgba(67,56,202,.15);
+  --text:#1e293b;--muted:#64748b;--muted2:#94a3b8;
+  --border:#e2ddd5;--border2:#d4cdc3;
+  --accept:#059669;--accept-bg:rgba(5,150,105,.08);
+  --reject:#dc2626;--reject-bg:rgba(220,38,38,.08);
+  --gold:#d97706;
+  --shadow:0 1px 3px rgba(0,0,0,.08);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.1);
+  --glass:rgba(255,255,255,.9);
+}
+
+:root{
+  --mono:'JetBrains Mono',monospace;
+  --serif:'Playfair Display',serif;
+  --sans:'Inter',sans-serif;
+  --nav-h:60px;--r:8px;
+}
+
+body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;overflow-x:hidden;transition:background .3s,color .3s}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;font-family:var(--sans)}
+input,select,textarea{font-family:var(--sans)}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--glass);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);z-index:1000;display:flex;align-items:center;padding:0 2rem;gap:1.5rem;transition:background .3s}
+.brand{display:flex;align-items:center;gap:.6rem;flex-shrink:0}
+.brand-icon{background:var(--accent);color:#fff;font-family:var(--mono);font-weight:600;font-size:.8rem;padding:.3rem .5rem;border-radius:6px;letter-spacing:.5px}
+.brand-name{font-family:var(--serif);font-weight:700;font-size:1rem;letter-spacing:.3px}
+.nav-links{display:flex;list-style:none;gap:.15rem;flex:1;justify-content:center}
+.nav-links a{font-size:.7rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:.4rem .7rem;border-radius:6px;transition:color .2s,background .2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text);background:var(--accent-dim)}
+.nav-links .active-pill{background:var(--accent);color:#fff}
+.nav-right{display:flex;align-items:center;gap:.6rem;flex-shrink:0}
+.theme-toggle{background:var(--card2);border:1px solid var(--border);color:var(--text);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all .2s}
+.theme-toggle:hover{border-color:var(--accent);background:var(--accent-dim)}
+.nav-launch{background:transparent;border:1.5px solid var(--text);color:var(--text);font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:.45rem 1rem;border-radius:6px;transition:all .2s}
+.nav-launch:hover{background:var(--text);color:var(--bg)}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;padding:.5rem;cursor:pointer}
+.hamburger span{width:22px;height:2px;background:var(--text);border-radius:2px;transition:transform .3s}
+.mobile-menu{display:none;position:fixed;top:var(--nav-h);left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--border);padding:1rem;z-index:999;flex-direction:column;gap:.5rem}
+.mobile-menu a{font-size:.85rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:.6rem 1rem;border-radius:var(--r);display:block}
+.mobile-menu.open{display:flex}
+
+/* ── HERO ── */
+#home{min-height:100vh;padding-top:var(--nav-h);background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column}
+.hero-grid-bg{position:absolute;inset:0;background-image:radial-gradient(var(--accent-glow) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;opacity:.5}
+.hero-accent-line{position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(to bottom,var(--accent),transparent)}
+.hero-content{flex:1;display:flex;flex-direction:column;justify-content:center;padding:4rem 4rem 2rem;max-width:900px}
+.hero-tag{display:inline-flex;align-items:center;border:1.5px solid var(--accent);color:var(--accent);font-size:.65rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;padding:.35rem .8rem;margin-bottom:1.8rem;border-radius:4px}
+.hero-title{font-family:var(--serif);font-size:clamp(2.5rem,5.5vw,4.5rem);font-weight:900;line-height:1.1;margin-bottom:1.2rem}
+.hero-title .accent{color:var(--accent);font-style:italic}
+.hero-sub{font-size:1rem;color:var(--muted);font-style:italic;max-width:560px;margin-bottom:2.5rem;line-height:1.7}
+.hero-btns{display:flex;flex-wrap:wrap;gap:1rem;margin-bottom:3.5rem}
+.btn-primary{background:var(--accent);color:#fff;border:none;font-size:.72rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;padding:.7rem 1.6rem;border-radius:var(--r);transition:all .2s;box-shadow:0 2px 8px var(--accent-glow)}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 16px var(--accent-glow)}
+.btn-outline{background:transparent;border:1.5px solid var(--border2);color:var(--text);font-size:.72rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:.65rem 1.4rem;border-radius:var(--r);transition:all .2s}
+.btn-outline:hover{border-color:var(--text);background:var(--accent-dim)}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border)}
+.stat-card{background:var(--card);padding:1.8rem 1.5rem;text-align:center;transition:background .3s}
+.stat-num{font-family:var(--serif);font-size:2.2rem;font-weight:700;color:var(--text);display:block}
+.stat-label{font-size:.63rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:.3rem;display:block}
+
+/* ── QUICK LAUNCH ── */
+#quick-launch{background:var(--bg2);padding:4rem;border-top:1px solid var(--border);transition:background .3s}
+.section-header{display:flex;align-items:baseline;gap:1.2rem;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:2px solid var(--accent)}
+.section-title{font-family:var(--serif);font-weight:900;font-size:1.4rem;letter-spacing:.02em}
+.section-sub{font-style:italic;color:var(--accent);font-size:.85rem}
+.quick-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;margin-top:1.5rem}
+.quick-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.3rem;cursor:pointer;transition:all .2s;box-shadow:var(--shadow)}
+.quick-card:hover{border-color:var(--accent);transform:translateY(-3px);background:var(--card2);box-shadow:var(--shadow-lg)}
+.qc-name{font-weight:700;font-size:.9rem;margin-bottom:.3rem}
+.qc-desc{font-size:.76rem;color:var(--muted);line-height:1.5}
+.qc-badge{display:inline-block;background:var(--accent-dim);color:var(--accent);font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.2rem .5rem;border-radius:4px;margin-bottom:.6rem}
+
+/* ── SIMULATOR ── */
+#simulator{background:var(--bg);padding:2rem 0;border-top:1px solid var(--border);transition:background .3s}
+.sim-wrapper{max-width:1400px;margin:0 auto;padding:0 1.5rem}
+.sim-top-bar{display:flex;align-items:center;gap:1rem;padding:1rem 1.5rem;background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:1rem;flex-wrap:wrap;box-shadow:var(--shadow)}
+.sim-top-bar .section-title{font-size:1rem;margin-right:auto}
+.example-select{background:var(--card2);border:1px solid var(--border2);color:var(--text);font-size:.8rem;padding:.45rem .7rem;border-radius:var(--r);min-width:180px}
+.example-select:focus{outline:none;border-color:var(--accent)}
+.btn-load-ex{background:var(--accent);color:#fff;border:none;font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.45rem 1rem;border-radius:var(--r);transition:all .2s}
+.btn-load-ex:hover{background:var(--accent2)}
+
+/* Input config */
+.input-config{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.states-config{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.7rem;margin-bottom:1rem}
+.config-group{display:flex;flex-direction:column;gap:.3rem}
+.config-group label{font-size:.63rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+.config-input{background:var(--card2);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:.85rem;padding:.5rem .7rem;border-radius:var(--r);width:100%;transition:border-color .2s}
+.config-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.regex-row{display:flex;gap:.5rem;align-items:flex-end}
+.regex-row .config-input{flex:1}
+.btn-validate{background:var(--card2);border:1px solid var(--border2);color:var(--muted);font-size:.7rem;font-weight:600;padding:.5rem .8rem;border-radius:var(--r);transition:all .2s;white-space:nowrap}
+.btn-validate:hover{border-color:var(--accept);color:var(--accept)}
+.regex-status{font-size:.75rem;font-weight:600;margin-left:.3rem;align-self:center}
+
+/* Symbol Palette */
+.symbol-palette{display:flex;flex-wrap:wrap;gap:4px;margin-top:.5rem;padding:.4rem .5rem;background:var(--card2);border:1px solid var(--border);border-radius:var(--r)}
+.symbol-palette-label{font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);width:100%;margin-bottom:2px}
+.sym-btn{background:var(--card3);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:.78rem;font-weight:600;min-width:28px;height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;transition:all .15s;cursor:pointer;padding:0 .35rem}
+.sym-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);transform:translateY(-1px)}
+
+/* Tape */
+.tape-section{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;margin-bottom:1rem;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.tape-state-bar{display:flex;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap}
+.tape-state-pill{background:var(--card2);border:1px solid var(--border2);border-radius:30px;padding:.3rem .9rem;font-family:var(--mono);font-size:.78rem;display:flex;align-items:center;gap:.5rem;transition:all .2s}
+.tape-state-pill .label{font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tape-state-pill .value{color:var(--text);font-weight:600}
+.state-pill-current{border-color:var(--accent);background:var(--accent-dim)}
+.state-pill-accept{border-color:var(--accept)!important;background:var(--accept-bg)!important}
+.state-pill-reject{border-color:var(--reject)!important;background:var(--reject-bg)!important}
+.tape-result-badge{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.3rem .8rem;border-radius:20px;margin-left:auto;transition:all .2s}
+.badge-accept{background:var(--accept-bg);color:var(--accept);border:1px solid var(--accept)}
+.badge-reject{background:var(--reject-bg);color:var(--reject);border:1px solid var(--reject)}
+.badge-running{background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent)}
+.badge-ready{background:var(--card2);color:var(--muted);border:1px solid var(--border)}
+.tape-head-arrow{text-align:center;font-size:1rem;color:var(--accent);margin-bottom:.3rem;line-height:1}
+.tape-outer{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.tape{display:flex;gap:2px;padding:.3rem 0;width:max-content;min-width:100%}
+.tape-cell{display:flex;flex-direction:column;align-items:center;min-width:44px;border:1px solid var(--border2);background:var(--card2);border-radius:6px;overflow:hidden;transition:all .25s ease}
+.tape-cell.current{border-color:var(--accent);background:var(--accent-dim);box-shadow:0 0 12px var(--accent-glow)}
+.tape-cell.blank .cell-sym{color:var(--border2)}
+.cell-idx{font-size:.55rem;color:var(--muted2);padding:.15rem .2rem;font-family:var(--mono);border-bottom:1px solid var(--border);width:100%;text-align:center;background:rgba(0,0,0,.1)}
+.cell-sym{font-family:var(--mono);font-size:1.1rem;font-weight:600;padding:.4rem .3rem;color:var(--text);text-align:center;min-height:2.2rem;display:flex;align-items:center;justify-content:center}
+.tape-cell.blank .cell-sym{color:var(--border2);font-size:.8rem}
+.tape-cell.current .cell-sym{color:var(--accent2);font-weight:700}
+
+/* Controls */
+.controls-bar{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;padding:.8rem 1rem;background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)}
+.ctrl-btn{border:1.5px solid var(--border2);background:var(--card2);color:var(--text);font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.5rem 1rem;border-radius:var(--r);transition:all .15s;display:flex;align-items:center;gap:.4rem}
+.ctrl-btn:hover:not(:disabled){border-color:var(--text);background:var(--card3);transform:translateY(-1px)}
+.ctrl-btn:disabled{opacity:.35;cursor:not-allowed}
+.ctrl-btn.run-btn{background:var(--accept);border-color:var(--accept);color:#fff}
+.ctrl-btn.run-btn:hover:not(:disabled){filter:brightness(1.15)}
+.ctrl-btn.stop-btn{background:var(--reject-bg);border-color:var(--reject);color:var(--reject)}
+.ctrl-btn.stop-btn:hover:not(:disabled){background:rgba(248,113,113,.25)}
+.ctrl-btn.pause-btn{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.speed-group{margin-left:auto;display:flex;align-items:center;gap:.6rem;flex-shrink:0}
+.speed-group label{font-size:.63rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.speed-slider{-webkit-appearance:none;appearance:none;width:100px;height:4px;border-radius:2px;background:var(--border2);outline:none}
+.speed-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer}
+.speed-val{font-family:var(--mono);font-size:.72rem;color:var(--muted);min-width:40px}
+
+/* Panels */
+.panels-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r);display:flex;flex-direction:column;min-height:300px;max-height:400px;box-shadow:var(--shadow)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem;border-bottom:1px solid var(--border);flex-shrink:0}
+.panel-title{font-size:.68rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+.panel-body{flex:1;overflow:auto;padding:.5rem;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.btn-sm{background:var(--accent);border:none;color:#fff;font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.3rem .6rem;border-radius:6px;transition:all .2s}
+.btn-sm:hover{background:var(--accent2)}
+.btn-sm-secondary{background:var(--card2);border:1px solid var(--border2);color:var(--muted);font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.3rem .6rem;border-radius:6px;transition:all .2s}
+.btn-sm-secondary:hover{border-color:var(--muted);color:var(--text)}
+
+/* Transition Table */
+.trans-table{width:100%;border-collapse:collapse;font-size:.78rem}
+.trans-table th{background:var(--card3);color:var(--muted);font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:.4rem .5rem;text-align:left;border-bottom:1px solid var(--border2);position:sticky;top:0}
+.trans-table td{padding:.3rem .4rem;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:.78rem;vertical-align:middle}
+.trans-table tr:hover td{background:var(--accent-dim)}
+.trans-table tr.highlighted td{background:var(--accent-dim);border-left:2px solid var(--accent)}
+.cell-edit{background:transparent;border:none;color:var(--text);font-family:var(--mono);font-size:.78rem;width:100%;min-width:40px;outline:none}
+.cell-edit:focus{background:rgba(99,102,241,.08);border-radius:4px}
+.move-sel{background:var(--card3);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:.75rem;padding:.15rem .2rem;border-radius:4px}
+.del-row{background:none;border:none;color:var(--muted2);font-size:.9rem;cursor:pointer;padding:.1rem .3rem;border-radius:4px}
+.del-row:hover{color:var(--reject);background:var(--reject-bg)}
+
+/* Execution Log */
+.log-entry{display:flex;align-items:flex-start;gap:.5rem;padding:.35rem .5rem;border-radius:6px;font-size:.72rem;margin-bottom:2px}
+.log-entry:hover{background:var(--accent-dim)}
+.log-step{font-family:var(--mono);color:var(--muted2);min-width:28px;font-size:.65rem}
+.log-content{font-family:var(--mono);line-height:1.5;word-break:break-all}
+.log-entry.active{background:var(--accent-dim);border-left:2px solid var(--accent)}
+.log-sym{color:var(--gold)}
+.log-state{color:var(--accent)}
+.log-arrow{color:var(--muted2)}
+.log-entry.accept-entry .log-content{color:var(--accept);font-weight:600}
+.log-entry.reject-entry .log-content{color:var(--reject);font-weight:600}
+.log-placeholder{color:var(--muted2);font-size:.78rem;padding:1rem;text-align:center;font-style:italic}
+
+/* ── DIAGRAM SECTION ── */
+.diagram-section{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:1rem;box-shadow:var(--shadow);overflow:hidden}
+.diagram-header{display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem;border-bottom:1px solid var(--border)}
+.diagram-controls{display:flex;gap:.3rem;align-items:center}
+.diagram-controls button{background:var(--card2);border:1px solid var(--border2);color:var(--muted);width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:all .2s}
+.diagram-controls button:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.diagram-canvas{width:100%;height:480px;position:relative;overflow:hidden;cursor:grab}
+.diagram-canvas:active{cursor:grabbing}
+.diagram-canvas svg{width:100%;height:100%}
+
+/* ── CUSTOM BUILDER ── */
+.builder-section{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:1rem;box-shadow:var(--shadow)}
+.builder-header{display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem;border-bottom:1px solid var(--border);cursor:pointer}
+.builder-header:hover{background:var(--accent-dim)}
+.builder-toggle{font-size:.8rem;color:var(--muted);transition:transform .2s}
+.builder-toggle.open{transform:rotate(180deg)}
+.builder-body{padding:1rem;display:none}
+.builder-body.open{display:block}
+.builder-formal-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.7rem;margin-bottom:1rem}
+.builder-formal-grid .config-group label{font-size:.6rem}
+.builder-formal-grid .config-input{font-size:.78rem;padding:.4rem .6rem}
+.builder-formal-sep{border:none;border-top:1px solid var(--border);margin:.6rem 0}
+.builder-hint{font-size:.68rem;color:var(--muted);line-height:1.6;margin-bottom:.5rem}
+.builder-hint code{font-family:var(--mono);color:var(--accent);font-size:.65rem;background:var(--card3);padding:.1rem .3rem;border-radius:3px}
+.builder-textarea{width:100%;min-height:180px;background:var(--bg);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:.8rem;padding:.8rem;border-radius:var(--r);resize:vertical;line-height:1.7;tab-size:2}
+.builder-textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.builder-actions{display:flex;gap:.5rem;margin-top:.8rem;align-items:center;flex-wrap:wrap}
+.builder-feedback{font-size:.72rem;font-family:var(--mono);margin-left:.5rem;flex:1;min-width:200px}
+.builder-feedback.success{color:var(--accept)}
+.builder-feedback.error{color:var(--reject)}
+.builder-feedback.warn{color:var(--gold)}
+.builder-validation{background:var(--card2);border:1px solid var(--border);border-radius:var(--r);padding:.6rem .8rem;margin-top:.6rem;font-size:.7rem;font-family:var(--mono);line-height:1.7;max-height:120px;overflow-y:auto}
+.builder-validation .v-ok{color:var(--accept)}
+.builder-validation .v-err{color:var(--reject)}
+.builder-validation .v-warn{color:var(--gold)}
+
+/* ── EXAMPLES SECTION ── */
+#examples{background:var(--bg2);padding:4rem;border-top:1px solid var(--border);transition:background .3s}
+.examples-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;margin-top:1.5rem}
+.ex-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.ex-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);transform:scaleY(0);transition:transform .2s;transform-origin:bottom}
+.ex-card:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.ex-card:hover::before{transform:scaleY(1)}
+.ex-num{font-family:var(--mono);font-size:.63rem;color:var(--accent);font-weight:600;letter-spacing:.1em;margin-bottom:.5rem}
+.ex-name{font-family:var(--serif);font-size:1.1rem;font-weight:700;margin-bottom:.5rem}
+.ex-desc{font-size:.78rem;color:var(--muted);line-height:1.6;margin-bottom:1rem}
+.ex-input{font-family:var(--mono);font-size:.73rem;background:var(--card3);color:var(--gold);padding:.3rem .6rem;border-radius:4px;border:1px solid var(--border2)}
+.ex-launch{position:absolute;bottom:1rem;right:1rem;background:var(--accent);color:#fff;border:none;font-size:.63rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.35rem .7rem;border-radius:6px;opacity:0;transition:opacity .2s}
+.ex-card:hover .ex-launch{opacity:1}
+
+/* ── THEORY ── */
+#theory{background:var(--bg);padding:4rem;border-top:1px solid var(--border);transition:background .3s}
+.theory-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:1.5rem}
+.theory-block{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.8rem;box-shadow:var(--shadow)}
+.theory-block h3{font-family:var(--serif);font-size:1.15rem;font-weight:700;margin-bottom:1rem;padding-bottom:.6rem;border-bottom:1px solid var(--border2)}
+.theory-block p{font-size:.83rem;color:var(--muted);line-height:1.75;margin-bottom:.8rem}
+.theory-block p:last-child{margin-bottom:0}
+.formal-def{background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:1.2rem;margin:.8rem 0;font-family:var(--mono);font-size:.78rem;line-height:2}
+.formal-def .sym{color:var(--accent)}
+.formal-def .def-row{display:flex;gap:.5rem;margin:.15rem 0}
+.formal-def .def-key{color:var(--gold);min-width:60px}
+.formal-def .def-val{color:var(--muted)}
+.theory-full{grid-column:1/-1}
+
+/* ── ABOUT ── */
+#about{background:var(--bg2);padding:4rem;border-top:1px solid var(--border);transition:background .3s}
+.about-grid{display:grid;grid-template-columns:2fr 1fr;gap:3rem;margin-top:1.5rem}
+.about-text p{font-size:.85rem;color:var(--muted);line-height:1.8;margin-bottom:1rem}
+.about-text h3{font-family:var(--serif);font-size:1.1rem;margin-bottom:.8rem;color:var(--text)}
+.feature-list{list-style:none;display:flex;flex-direction:column;gap:.5rem}
+.feature-list li{font-size:.8rem;color:var(--muted);padding-left:1.2rem;position:relative;line-height:1.5}
+.feature-list li::before{content:'→';position:absolute;left:0;color:var(--accent);font-weight:700}
+.about-side{display:flex;flex-direction:column;gap:1rem}
+.about-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.3rem;box-shadow:var(--shadow)}
+.about-card h4{font-size:.68rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:.8rem}
+.about-card p,.about-card a{font-size:.8rem;color:var(--muted);line-height:1.6}
+.about-card a:hover{color:var(--accent)}
+.tag-pill{display:inline-block;background:var(--card3);border:1px solid var(--border2);color:var(--muted);font-size:.63rem;font-family:var(--mono);padding:.2rem .5rem;border-radius:4px;margin:.15rem}
+
+/* ── FOOTER ── */
+footer{background:var(--bg);border-top:1px solid var(--border);padding:2rem 4rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;transition:background .3s}
+.footer-brand{display:flex;align-items:center;gap:.6rem}
+.footer-text{font-size:.72rem;color:var(--muted2)}
+.footer-links{display:flex;gap:1.5rem}
+.footer-links a{font-size:.68rem;color:var(--muted2);font-weight:600;letter-spacing:.08em;text-transform:uppercase;transition:color .2s}
+.footer-links a:hover{color:var(--accent)}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1100px){
+  .panels-grid{grid-template-columns:1fr}
+  .theory-grid{grid-template-columns:1fr}
+}
+@media(max-width:900px){
+  nav{padding:0 1rem}.nav-links{display:none}.hamburger{display:flex}
+  .hero-content{padding:3rem 2rem 2rem}.stats-grid{grid-template-columns:repeat(2,1fr)}
+  #quick-launch,#examples,#theory,#about{padding:3rem 1.5rem}
+  .sim-wrapper{padding:0 .75rem}
+  .input-config{grid-template-columns:1fr}.states-config{grid-template-columns:1fr 1fr}
+  .about-grid{grid-template-columns:1fr}
+  footer{padding:1.5rem 1.5rem;flex-direction:column;align-items:flex-start}
+  .diagram-canvas{height:350px}
+}
+@media(max-width:680px){
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .hero-title{font-size:2.2rem}
+  .controls-bar{gap:.4rem}
+  .ctrl-btn{font-size:.62rem;padding:.4rem .7rem}
+  .speed-group{margin-left:0;width:100%}
+  .diagram-canvas{height:280px}
+}
+@media(max-width:480px){
+  .states-config{grid-template-columns:1fr}
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.fade-in{animation:fadeIn .4s ease forwards}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.pulsing{animation:pulse 1s infinite}
+@keyframes cellFlash{0%{background:var(--accent-dim)}50%{background:var(--accent-glow)}100%{background:var(--accent-dim)}}
+.tape-cell.current.flash{animation:cellFlash .3s ease}
+@keyframes stateGlow{0%,100%{filter:drop-shadow(0 0 4px var(--accent-glow))}50%{filter:drop-shadow(0 0 12px var(--accent-glow))}}
+.state-active-glow{animation:stateGlow 1.5s ease-in-out infinite}
+@keyframes edgeFlash{0%{stroke-opacity:1}50%{stroke-opacity:.4}100%{stroke-opacity:1}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="main-nav">
+  <div class="brand">
+    <span class="brand-icon">TM</span>
+    <span class="brand-name">Turing Machine</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#home" class="active-pill">Dashboard</a></li>
+    <li><a href="#simulator">Simulator</a></li>
+    <li><a href="#examples">Examples</a></li>
+    <li><a href="#theory">Theory</a></li>
+    <li><a href="#about">About</a></li>
+  </ul>
+  <div class="nav-right">
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
+    <button class="nav-launch" onclick="scrollToSim()">Launch Simulator →</button>
+  </div>
+  <button class="hamburger" id="hamburger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="mobile-menu" id="mobile-menu">
+  <a href="#home" onclick="closeMobile()">Dashboard</a>
+  <a href="#simulator" onclick="closeMobile()">Simulator</a>
+  <a href="#examples" onclick="closeMobile()">Examples</a>
+  <a href="#theory" onclick="closeMobile()">Theory</a>
+  <a href="#about" onclick="closeMobile()">About</a>
+</div>
+
+<!-- HERO -->
+<section id="home">
+  <div class="hero-grid-bg"></div>
+  <div class="hero-accent-line"></div>
+  <div class="hero-content">
+    <div class="hero-tag">Theory of Automata &amp; Formal Languages</div>
+    <h1 class="hero-title">Turing Machine <span class="accent">Simulator</span></h1>
+    <p class="hero-sub">An interactive visual environment to understand the fundamental model of computation — step by step, transition by transition.</p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="scrollToSim()">Open Simulator</button>
+      <button class="btn-outline" onclick="document.getElementById('examples').scrollIntoView({behavior:'smooth'})">Browse Examples</button>
+      <button class="btn-outline" onclick="document.getElementById('theory').scrollIntoView({behavior:'smooth'})">Learn the Theory</button>
+    </div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card"><span class="stat-num">11</span><span class="stat-label">Built-in Examples</span></div>
+    <div class="stat-card"><span class="stat-num">7</span><span class="stat-label">Formal Components</span></div>
+    <div class="stat-card"><span class="stat-num">∞</span><span class="stat-label">Tape Length</span></div>
+    <div class="stat-card"><span class="stat-num">50K</span><span class="stat-label">Max Steps</span></div>
+  </div>
+</section>
+
+<!-- QUICK LAUNCH -->
+<section id="quick-launch">
+  <div class="section-header">
+    <span class="section-title">Quick Launch</span>
+    <span class="section-sub">Open the simulator with an example pre-loaded</span>
+  </div>
+  <div class="quick-cards" id="quick-cards"></div>
+</section>
+
+<!-- SIMULATOR -->
+<section id="simulator">
+  <div class="sim-wrapper">
+    <div class="sim-top-bar">
+      <span class="section-title" style="font-size:1rem">⚙ Simulator</span>
+      <select class="example-select" id="exampleSelect"></select>
+      <button class="btn-load-ex" onclick="loadSelectedExample()">Load Example</button>
+      <button class="btn-sm-secondary" onclick="clearAll()">Clear All</button>
+    </div>
+
+    <!-- Input Config -->
+    <div class="input-config">
+      <div class="config-group">
+        <label>Input String</label>
+        <div style="display:flex;gap:.5rem">
+          <input class="config-input" id="inputStr" type="text" value="1011" placeholder="Enter any input (e.g. Racecar, 1011, aaabbb)…" style="flex:1">
+          <button class="btn-load-ex" onclick="doReset()" title="Load your custom input onto the tape and reset the machine" style="white-space:nowrap;font-size:.65rem;padding:.45rem .8rem">Load &amp; Reset ↻</button>
+        </div>
+        <div class="symbol-palette" id="symbolPalette">
+          <span class="symbol-palette-label">Symbol Palette — click to insert</span>
+        </div>
+      </div>
+      <div class="config-group">
+        <label>Regex Pattern (optional validation)</label>
+        <div class="regex-row">
+          <input class="config-input" id="regexPat" type="text" placeholder="e.g. [01]+ or (a|b)*">
+          <button class="btn-validate" onclick="validateRegex()">Validate</button>
+          <button class="btn-validate" onclick="loadRegexToTape()" title="Generate a random string matching this regex and load it onto the tape">Generate &amp; Load ↑</button>
+          <span class="regex-status" id="regexStatus"></span>
+        </div>
+      </div>
+    </div>
+    <div class="states-config">
+      <div class="config-group"><label>Initial State</label><input class="config-input" id="cfgInitial" value="q0"></div>
+      <div class="config-group"><label>Accept State</label><input class="config-input" id="cfgAccept" value="qaccept"></div>
+      <div class="config-group"><label>Reject State</label><input class="config-input" id="cfgReject" value="qreject"></div>
+    </div>
+
+    <!-- Tape -->
+    <div class="tape-section">
+      <div class="tape-state-bar">
+        <div class="tape-state-pill state-pill-current" id="stateDisplay">
+          <span class="label">State</span><span class="value" id="stateVal">q0</span>
+        </div>
+        <div class="tape-state-pill"><span class="label">Step</span><span class="value" id="stepVal">0</span></div>
+        <div class="tape-state-pill"><span class="label">Head</span><span class="value" id="headVal">0</span></div>
+        <div class="tape-state-pill"><span class="label">Read</span><span class="value" id="readVal">—</span></div>
+        <span class="tape-result-badge badge-ready" id="resultBadge">Ready</span>
+      </div>
+      <div class="tape-head-arrow">▼</div>
+      <div class="tape-outer" id="tapeOuter">
+        <div class="tape" id="tape"></div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-bar">
+      <button class="ctrl-btn" id="btnReset" onclick="doReset()">⟪ Reset</button>
+      <button class="ctrl-btn" id="btnStepBack" onclick="doStepBack()">◀ Back</button>
+      <button class="ctrl-btn" id="btnStep" onclick="doStep()">Step ▶</button>
+      <button class="ctrl-btn run-btn" id="btnRun" onclick="doRun()">▶▶ Run</button>
+      <button class="ctrl-btn pause-btn" id="btnPause" onclick="doPause()" style="display:none">⏸ Pause</button>
+      <button class="ctrl-btn stop-btn" id="btnStop" onclick="doStop()">■ Stop</button>
+      <div class="speed-group">
+        <label>Speed</label>
+        <input class="speed-slider" type="range" id="speedSlider" min="1" max="10" value="5" oninput="updateSpeed(this.value)">
+        <span class="speed-val" id="speedVal">300ms</span>
+      </div>
+    </div>
+
+    <!-- Panels: Transition Table + Execution Log -->
+    <div class="panels-grid">
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">Transition Table</span>
+          <div style="display:flex;gap:.4rem">
+            <button class="btn-sm" onclick="addTransitionRow()">+ Row</button>
+            <button class="btn-sm-secondary" onclick="applyTable()">Apply</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <table class="trans-table" id="transTable">
+            <thead><tr><th>From</th><th>Read</th><th>Write</th><th>Move</th><th>To</th><th></th></tr></thead>
+            <tbody id="transBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">Execution Log</span>
+          <button class="btn-sm-secondary" onclick="clearLog()">Clear</button>
+        </div>
+        <div class="panel-body" id="execLog">
+          <div class="log-placeholder">Run the simulator to see execution steps…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Machine Builder -->
+    <div class="builder-section">
+      <div class="builder-header" onclick="toggleBuilder()">
+        <span class="panel-title">✦ Custom Machine Designer — M = (Q, Σ, Γ, δ, q₀, B, F)</span>
+        <span class="builder-toggle" id="builderToggle">▼</span>
+      </div>
+      <div class="builder-body" id="builderBody">
+        <div class="builder-formal-grid">
+          <div class="config-group"><label>States (Q) — comma separated</label><input class="config-input" id="fmStates" placeholder="q0, q1, q2, qaccept, qreject"></div>
+          <div class="config-group"><label>Input Alphabet (Σ)</label><input class="config-input" id="fmSigma" placeholder="a, b, 0, 1"></div>
+          <div class="config-group"><label>Tape Alphabet (Γ) — must include Σ ∪ {B}</label><input class="config-input" id="fmGamma" placeholder="a, b, 0, 1, X, Y, B"></div>
+          <div class="config-group"><label>Start State (q₀)</label><input class="config-input" id="fmStart" placeholder="q0"></div>
+          <div class="config-group"><label>Accept / Final States (F)</label><input class="config-input" id="fmAcceptStates" placeholder="qaccept"></div>
+          <div class="config-group"><label>Reject State</label><input class="config-input" id="fmRejectState" placeholder="qreject"></div>
+          <div class="config-group"><label>Blank Symbol</label><input class="config-input" id="fmBlank" value="B" placeholder="B" style="max-width:80px"></div>
+          <div class="config-group"><label>Input String</label><input class="config-input" id="fmInput" placeholder="e.g. aaabbb, racecar, 1011"></div>
+          <div class="config-group"><label>Initial Head Position</label><input class="config-input" id="fmHeadPos" type="number" value="0" min="0" style="max-width:80px"></div>
+        </div>
+        <hr class="builder-formal-sep">
+        <div class="builder-hint">
+          <strong>Transition Function (δ):</strong> One rule per line &nbsp;|&nbsp; Format: <code>state, read → next, write, L|R|S</code><br>
+          Example: <code>q0, a → q1, X, R</code> &nbsp;|&nbsp; Use <code>B</code> for blank &nbsp;|&nbsp; <code>S</code> = stay &nbsp;|&nbsp; Lines starting with <code>//</code> are comments
+        </div>
+        <textarea class="builder-textarea" id="builderRules" placeholder="q0, a → q1, X, R&#10;q1, a → q1, a, R&#10;q1, b → q2, Y, L&#10;q2, a → q2, a, L&#10;q2, X → q0, X, R&#10;q0, Y → q3, Y, R&#10;q3, Y → q3, Y, R&#10;q3, B → qaccept, B, R"></textarea>
+        <div class="builder-actions">
+          <button class="btn-primary" onclick="buildMachine()" style="font-size:.68rem;padding:.5rem 1.2rem">Build Machine</button>
+          <button class="btn-sm" onclick="validateMachine()" style="background:var(--gold);font-size:.62rem">Validate</button>
+          <button class="btn-sm-secondary" onclick="exportRules()">Export Current</button>
+          <button class="btn-sm-secondary" onclick="autoFillFormal()">Auto-Fill from Rules</button>
+          <span class="builder-feedback" id="builderFeedback"></span>
+        </div>
+        <div class="builder-validation" id="builderValidation" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- Transition Diagram -->
+    <div class="diagram-section">
+      <div class="diagram-header">
+        <span class="panel-title">Transition Diagram</span>
+        <div class="diagram-controls">
+          <button onclick="diagramZoom(1.2)" title="Zoom In">+</button>
+          <button onclick="diagramZoom(1/1.2)" title="Zoom Out">−</button>
+          <button onclick="diagramResetView()" title="Reset View">⟲</button>
+          <button onclick="renderDiagram()" title="Refresh">↻</button>
+        </div>
+      </div>
+      <div class="diagram-canvas" id="diagramCanvas">
+        <svg id="diagram-svg"></svg>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- EXAMPLES -->
+<section id="examples">
+  <div class="section-header">
+    <span class="section-title">Built-in Examples</span>
+    <span class="section-sub">Click any card to load it in the simulator</span>
+  </div>
+  <div class="examples-grid" id="examplesGrid"></div>
+</section>
+
+<!-- THEORY -->
+<section id="theory">
+  <div class="section-header">
+    <span class="section-title">Theory</span>
+    <span class="section-sub">Formal foundations of Turing Machines</span>
+  </div>
+  <div class="theory-grid">
+    <div class="theory-block">
+      <h3>Formal Definition</h3>
+      <p>A Turing Machine is a 7-tuple <em>M = (Q, Σ, Γ, δ, q₀, q_acc, q_rej)</em> where:</p>
+      <div class="formal-def">
+        <div class="def-row"><span class="def-key sym">Q</span><span class="def-val">— finite, non-empty set of states</span></div>
+        <div class="def-row"><span class="def-key sym">Σ</span><span class="def-val">— input alphabet (blank ∉ Σ)</span></div>
+        <div class="def-row"><span class="def-key sym">Γ</span><span class="def-val">— tape alphabet (Σ ⊂ Γ, blank ∈ Γ)</span></div>
+        <div class="def-row"><span class="def-key sym">δ</span><span class="def-val">— transition function Q×Γ → Q×Γ×{L,R}</span></div>
+        <div class="def-row"><span class="def-key sym">q₀</span><span class="def-val">— initial state (q₀ ∈ Q)</span></div>
+        <div class="def-row"><span class="def-key sym">q_acc</span><span class="def-val">— accept state</span></div>
+        <div class="def-row"><span class="def-key sym">q_rej</span><span class="def-val">— reject state (q_acc ≠ q_rej)</span></div>
+      </div>
+    </div>
+    <div class="theory-block">
+      <h3>How a TM Computes</h3>
+      <p>The machine begins with its input written on the tape and the read/write head at the leftmost cell. At each step, it reads the current cell, writes a symbol, moves the head left or right, and transitions to a new state.</p>
+      <p>Computation halts when the machine enters the accept or reject state. If it loops forever, the input is said to not be decided by that machine.</p>
+      <p>A language is <strong>Turing-decidable</strong> if some TM halts on every input. A language is <strong>Turing-recognizable</strong> if some TM accepts every member, but may loop on non-members.</p>
+    </div>
+    <div class="theory-block theory-full">
+      <h3>The Church-Turing Thesis &amp; Key Results</h3>
+      <p>The <strong>Church-Turing thesis</strong> states that every effectively computable function can be computed by a Turing Machine. This is not a provable theorem but an empirical hypothesis supported by many decades of research.</p>
+      <p>Key theoretical results include the <strong>Halting Problem</strong> (undecidable), <strong>Rice's Theorem</strong> (every non-trivial semantic property of TMs is undecidable), and the existence of <strong>Universal Turing Machines</strong> which can simulate any other TM.</p>
+      <p>The study of Turing Machines underpins modern complexity theory: the classes P, NP, PSPACE, and others are defined in terms of resource-bounded Turing Machines.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="section-header">
+    <span class="section-title">About</span>
+    <span class="section-sub">TAFL Project — Theory of Automata &amp; Formal Languages</span>
+  </div>
+  <div class="about-grid">
+    <div class="about-text">
+      <h3>About this Simulator</h3>
+      <p>This Turing Machine Simulator is a project for the Theory of Automata &amp; Formal Languages course. It provides a fully interactive, visual environment to construct, run, and study Turing Machines step by step.</p>
+      <h3 style="margin-top:1.5rem">Key Features</h3>
+      <ul class="feature-list">
+        <li>Dynamic transition table — add, remove, edit any rule</li>
+        <li>Custom Machine Builder — write rules in text format</li>
+        <li>Step-by-step execution with full step-back history</li>
+        <li>Interactive SVG diagram with draggable states &amp; zoom</li>
+        <li>Light &amp; Dark mode with university-style aesthetic</li>
+        <li>11 built-in example machines</li>
+        <li>Configurable initial, accept, and reject states</li>
+        <li>Adjustable execution speed</li>
+      </ul>
+    </div>
+    <div class="about-side">
+      <div class="about-card">
+        <h4>Technologies</h4>
+        <div>
+          <span class="tag-pill">HTML5</span><span class="tag-pill">CSS3</span>
+          <span class="tag-pill">Vanilla JS</span><span class="tag-pill">SVG</span>
+          <span class="tag-pill">Google Fonts</span>
+        </div>
+      </div>
+      <div class="about-card">
+        <h4>Reference</h4>
+        <p>Sipser, M. — <em>Introduction to the Theory of Computation</em></p>
+      </div>
+      <div class="about-card">
+        <h4>Blank Symbol</h4>
+        <p>Use <code style="font-family:var(--mono);color:var(--gold)">B</code> in the transition table to represent the blank tape symbol (□).</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-brand">
+    <span class="brand-icon">TM</span>
+    <span style="font-family:var(--serif);font-size:.95rem;font-weight:700">Turing Machine</span>
+  </div>
+  <span class="footer-text">TAFL Project · Theory of Automata &amp; Formal Languages</span>
+  <div class="footer-links">
+    <a href="#simulator">Simulator</a>
+    <a href="#examples">Examples</a>
+    <a href="#theory">Theory</a>
+  </div>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════
+// TURING MACHINE ENGINE
+// ═══════════════════════════════════════════════════
+class TuringMachine {
+  constructor() {
+    this.tape = {}; this.head = 0; this.state = 'q0';
+    this.history = []; this.transitions = {};
+    this.initialState = 'q0'; this.acceptState = 'qaccept'; this.rejectState = 'qreject';
+    this.halted = false; this.accepted = false; this.stepCount = 0;
+    this.log = []; this.maxSteps = 50000;
+  }
+  load(input, config) {
+    this.tape = {}; [...(input || '')].forEach((ch, i) => { this.tape[i] = ch; });
+    this.head = 0; this.state = config.initialState || 'q0';
+    this.transitions = config.transitions || {};
+    this.initialState = config.initialState || 'q0';
+    this.acceptState = config.acceptState || 'qaccept';
+    this.rejectState = config.rejectState || 'qreject';
+    this.halted = false; this.accepted = false; this.history = [];
+    this.stepCount = 0; this.log = [];
+  }
+  read() { return this.tape[this.head] || 'B'; }
+  step() {
+    if (this.halted) return null;
+    if (this.stepCount >= this.maxSteps) {
+      this.halted = true;
+      return { halt: true, reason: 'Max steps reached', accepted: false };
+    }
+    this.history.push({ tape: { ...this.tape }, head: this.head, state: this.state, halted: this.halted, accepted: this.accepted, logLen: this.log.length });
+    const sym = this.read();
+    const stTrans = this.transitions[this.state];
+    let trans = null;
+    if (stTrans) {
+      trans = stTrans[sym] || null;
+      if (!trans && sym === 'B') trans = stTrans[''] || stTrans['B'] || null;
+    }
+    if (!trans) {
+      const entry = { step: ++this.stepCount, fromState: this.state, read: sym, write: null, move: null, toState: null, message: `No transition from (${this.state}, ${sym})` };
+      this.log.push(entry); this.halted = true;
+      this.accepted = (this.state === this.acceptState);
+      return entry;
+    }
+    const writeVal = trans.write === 'B' ? 'B' : (trans.write || 'B');
+    const entry = { step: ++this.stepCount, fromState: this.state, read: sym, write: writeVal, move: trans.move, toState: trans.nextState };
+    if (writeVal === 'B') delete this.tape[this.head]; else this.tape[this.head] = writeVal;
+    if (trans.move === 'R') this.head++; else if (trans.move === 'L') this.head--;
+    // S = stay (head doesn't move)
+    this.state = trans.nextState;
+    if (this.state === this.acceptState) { this.halted = true; this.accepted = true; }
+    else if (this.state === this.rejectState) { this.halted = true; this.accepted = false; }
+    this.log.push(entry); return entry;
+  }
+  stepBack() {
+    if (this.history.length === 0) return false;
+    const snap = this.history.pop();
+    this.tape = { ...snap.tape }; this.head = snap.head; this.state = snap.state;
+    this.halted = false; this.accepted = false;
+    this.log.length = snap.logLen; this.stepCount = this.log.length;
+    return true;
+  }
+  getTapeCells(windowSize = 22) {
+    const half = Math.floor(windowSize / 2);
+    const start = this.head - half, end = this.head + half;
+    const cells = [];
+    for (let i = start; i <= end; i++) cells.push({ index: i, symbol: this.tape[i] || 'B' });
+    return cells;
+  }
+  getAllStates() {
+    const s = new Set([this.initialState, this.acceptState, this.rejectState]);
+    for (const [st, tr] of Object.entries(this.transitions)) {
+      s.add(st); for (const t of Object.values(tr)) s.add(t.nextState);
+    }
+    return [...s].filter(Boolean);
+  }
+  // Get only states that participate in transitions (have edges in or out)
+  getConnectedStates() {
+    const hasEdgeOut = new Set();
+    const hasEdgeIn = new Set();
+    for (const [st, tr] of Object.entries(this.transitions)) {
+      for (const t of Object.values(tr)) {
+        hasEdgeOut.add(st);
+        hasEdgeIn.add(t.nextState);
+      }
+    }
+    const connected = new Set([...hasEdgeOut, ...hasEdgeIn]);
+    // Always include initial state
+    connected.add(this.initialState);
+    // Include accept/reject ONLY if they have edges in or out
+    if (hasEdgeIn.has(this.acceptState) || hasEdgeOut.has(this.acceptState)) connected.add(this.acceptState);
+    if (hasEdgeIn.has(this.rejectState) || hasEdgeOut.has(this.rejectState)) connected.add(this.rejectState);
+    return [...connected].filter(Boolean);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// BUILT-IN EXAMPLES
+// ═══════════════════════════════════════════════════
+const EXAMPLES = {
+  binaryIncrement: {
+    name: 'Binary Increment', desc: 'Increments a binary number by 1. Demonstrates carry propagation.',
+    badge: 'Arithmetic', input: '1011', initialState: 'q0', acceptState: 'qaccept', rejectState: 'qreject',
+    transitions: {
+      q0: { '0': { write:'0', move:'R', nextState:'q0' }, '1': { write:'1', move:'R', nextState:'q0' }, 'B': { write:'B', move:'L', nextState:'q1' } },
+      q1: { '0': { write:'1', move:'R', nextState:'qaccept' }, '1': { write:'0', move:'L', nextState:'q1' }, 'B': { write:'1', move:'R', nextState:'qaccept' } },
+      qaccept: {}, qreject: {}
+    },
+    _validate: function(input) {
+      if (!input || input.length === 0) return 'Input must not be empty. Provide a binary number.';
+      if (!/^[01]+$/.test(input)) return 'Input must be a binary string (0s and 1s only).';
+      return null;
+    }
+  },
+  binaryDecrement: {
+    name: 'Binary Decrement', desc: 'Decrements a binary number by 1. Handles borrow propagation.',
+    badge: 'Arithmetic', input: '1100', initialState: 'q0', acceptState: 'qaccept', rejectState: 'qreject',
+    transitions: {
+      q0: { '0': { write:'0', move:'R', nextState:'q0' }, '1': { write:'1', move:'R', nextState:'q0' }, 'B': { write:'B', move:'L', nextState:'q1' } },
+      q1: { '1': { write:'0', move:'L', nextState:'q2' }, '0': { write:'1', move:'L', nextState:'q1' }, 'B': { write:'B', move:'R', nextState:'qreject' } },
+      q2: { '0': { write:'0', move:'L', nextState:'q2' }, '1': { write:'1', move:'L', nextState:'q2' }, 'B': { write:'B', move:'R', nextState:'qclean' } },
+      qclean: { '0': { write:'B', move:'R', nextState:'qclean' }, '1': { write:'1', move:'R', nextState:'qskip' }, 'B': { write:'0', move:'R', nextState:'qaccept' } },
+      qskip: { '0': { write:'0', move:'R', nextState:'qskip' }, '1': { write:'1', move:'R', nextState:'qskip' }, 'B': { write:'B', move:'L', nextState:'qaccept' } },
+      qaccept: {}, qreject: {}
+    }
+  },
+  anbnchecks: {
+    name: 'aⁿbⁿ Checker', desc: 'Accepts strings of the form aⁿbⁿ (equal number of a\'s followed by b\'s).',
+    badge: 'Context-Free', input: 'aaabbb', initialState: 'q0', acceptState: 'qaccept', rejectState: 'qreject',
+    transitions: {
+      q0: { 'a': { write:'X', move:'R', nextState:'q1' }, 'Y': { write:'Y', move:'R', nextState:'q3' }, 'B': { write:'B', move:'R', nextState:'qaccept' } },
+      q1: { 'a': { write:'a', move:'R', nextState:'q1' }, 'Y': { write:'Y', move:'R', nextState:'q1' }, 'b': { write:'Y', move:'L', nextState:'q2' } },
+      q2: { 'a': { write:'a', move:'L', nextState:'q2' }, 'Y': { write:'Y', move:'L', nextState:'q2' }, 'X': { write:'X', move:'R', nextState:'q0' } },
+      q3: { 'Y': { write:'Y', move:'R', nextState:'q3' }, 'B': { write:'B', move:'R', nextState:'qaccept' }, 'a': { write:'a', move:'R', nextState:'qreject' }, 'b': { write:'b', move:'R', nextState:'qreject' } },
+      qaccept: {}, qreject: {}
+    }
+  },
+  equalStrings: {
+    name: 'Equal Strings (w#w)', desc: 'Checks if the string before # equals the string after #. Supports any alphabet.',
+    badge: 'Comparison', input: 'abb#abb', initialState: 'q0', acceptState: 'qaccept', rejectState: 'qreject',
+    _dynamicInit: function(inputStr) {
+      // Extract unique symbols from input (excluding # and B)
+      const symbols = new Set();
+      for (const ch of (inputStr || '')) {
+        if (ch !== '#' && ch !== 'B') symbols.add(ch);
+      }
+      if (symbols.size === 0) symbols.add('a').add('b');
+      const syms = [...symbols];
+      const transitions = {
+        q0: { '#':{ write:'#', move:'R', nextState:'qverify' }, 'X':{ write:'X', move:'R', nextState:'q0' } },
+        qback: { 'Y':{ write:'Y', move:'L', nextState:'qback' }, '#':{ write:'#', move:'L', nextState:'qback' }, 'X':{ write:'X', move:'R', nextState:'q0' } },
+        qverify: { 'Y':{ write:'Y', move:'R', nextState:'qverify' }, 'B':{ write:'B', move:'R', nextState:'qaccept' } },
+        qaccept: {}, qreject: {}
+      };
+      // For each symbol, create seek & match states
+      syms.forEach(sym => {
+        const seekSt = 'qseek_' + sym;
+        const matchSt = 'qmatch_' + sym;
+        // q0: reading sym => mark X, go seek
+        transitions.q0[sym] = { write:'X', move:'R', nextState:seekSt };
+        // seek state: skip over any symbol or Y until #, then go to match
+        transitions[seekSt] = { '#':{ write:'#', move:'R', nextState:matchSt } };
+        syms.forEach(s => {
+          transitions[seekSt][s] = { write:s, move:'R', nextState:seekSt };
+        });
+        // match state: skip Y's, match sym, reject others
+        transitions[matchSt] = {
+          'Y':{ write:'Y', move:'R', nextState:matchSt },
+          [sym]:{ write:'Y', move:'L', nextState:'qback' },
+          'B':{ write:'B', move:'R', nextState:'qreject' }
+        };
+        // reject on wrong symbol
+        syms.forEach(s => {
+          if (s !== sym) transitions[matchSt][s] = { write:s, move:'R', nextState:'qreject' };
+        });
+        // qback: skip over any input symbol moving left
+        transitions.qback[sym] = { write:sym, move:'L', nextState:'qback' };
+        // qverify: reject unmatched symbols
+        transitions.qverify[sym] = { write:sym, move:'R', nextState:'qreject' };
+      });
+      return transitions;
+    },
+    transitions: {
+      q0: { 'a':{ write:'X', move:'R', nextState:'qseek_a' }, 'b':{ write:'X', move:'R', nextState:'qseek_b' }, '#':{ write:'#', move:'R', nextState:'qverify' }, 'X':{ write:'X', move:'R', nextState:'q0' } },
+      qseek_a: { 'a':{ write:'a', move:'R', nextState:'qseek_a' }, 'b':{ write:'b', move:'R', nextState:'qseek_a' }, '#':{ write:'#', move:'R', nextState:'qmatch_a' } },
+      qseek_b: { 'a':{ write:'a', move:'R', nextState:'qseek_b' }, 'b':{ write:'b', move:'R', nextState:'qseek_b' }, '#':{ write:'#', move:'R', nextState:'qmatch_b' } },
+      qmatch_a: { 'Y':{ write:'Y', move:'R', nextState:'qmatch_a' }, 'a':{ write:'Y', move:'L', nextState:'qback' }, 'b':{ write:'b', move:'R', nextState:'qreject' }, 'B':{ write:'B', move:'R', nextState:'qreject' } },
+      qmatch_b: { 'Y':{ write:'Y', move:'R', nextState:'qmatch_b' }, 'b':{ write:'Y', move:'L', nextState:'qback' }, 'a':{ write:'a', move:'R', nextState:'qreject' }, 'B':{ write:'B', move:'R', nextState:'qreject' } },
+      qback: { 'a':{ write:'a', move:'L', nextState:'qback' }, 'b':{ write:'b', move:'L', nextState:'qback' }, 'Y':{ write:'Y', move:'L', nextState:'qback' }, '#':{ write:'#', move:'L', nextState:'qback' }, 'X':{ write:'X', move:'R', nextState:'q0' } },
+      qverify: { 'Y':{ write:'Y', move:'R', nextState:'qverify' }, 'B':{ write:'B', move:'R', nextState:'qaccept' }, 'a':{ write:'a', move:'R', nextState:'qreject' }, 'b':{ write:'b', move:'R', nextState:'qreject' } },
+      qaccept: {}, qreject: {}
+    }
+  },
+  divisibleBy3: {
+    name: 'Divisible by 3', desc: 'Checks if a binary number is divisible by 3. DFA-style remainder tracking. Empty input is rejected.',
+    badge: 'Arithmetic', input: '110', initialState: 'qstart', acceptState: 'qaccept', rejectState: 'qreject',
+    transitions: {
+      qstart: { '0':{ write:'0', move:'R', nextState:'qr0' }, '1':{ write:'1', move:'R', nextState:'qr1' }, 'B':{ write:'B', move:'R', nextState:'qreject' } },
+      qr0: { '0':{ write:'0', move:'R', nextState:'qr0' }, '1':{ write:'1', move:'R', nextState:'qr1' }, 'B':{ write:'B', move:'R', nextState:'qaccept' } },
+      qr1: { '0':{ write:'0', move:'R', nextState:'qr2' }, '1':{ write:'1', move:'R', nextState:'qr0' }, 'B':{ write:'B', move:'R', nextState:'qreject' } },
+      qr2: { '0':{ write:'0', move:'R', nextState:'qr1' }, '1':{ write:'1', move:'R', nextState:'qr2' }, 'B':{ write:'B', move:'R', nextState:'qreject' } },
+      qaccept: {}, qreject: {}
+    },
+    _validate: function(input) {
+      if (!input || input.length === 0) return 'Input must not be empty. Provide a binary number.';
+      if (!/^[01]+$/.test(input)) return 'Input must be a binary string (0s and 1s only).';
+      return null;
+    }
+  },
+  binaryAddition: {
+    name: 'Binary Addition', desc: 'Adds two binary numbers a+b. Result left clean on tape (e.g. 10+11→101).',
+    badge: 'Arithmetic', input: '10+11', initialState: 'q0', acceptState: 'qaccept', rejectState: 'qreject',
+    transitions: {
+      q0: { '0':{ write:'0', move:'R', nextState:'q0' }, '1':{ write:'1', move:'R', nextState:'q0' }, '+':{ write:'+', move:'R', nextState:'q0' }, 'B':{ write:'B', move:'L', nextState:'qchk' } },
+      qchk: { '0':{ write:'0', move:'L', nextState:'qchk' }, '1':{ write:'1', move:'R', nextState:'qendB' }, '+':{ write:'B', move:'L', nextState:'qcleanA' } },
+      qendB: { '0':{ write:'0', move:'R', nextState:'qendB' }, '1':{ write:'1', move:'R', nextState:'qendB' }, 'B':{ write:'B', move:'L', nextState:'qdec' } },
+      qdec: { '1':{ write:'0', move:'L', nextState:'qtoPlus' }, '0':{ write:'1', move:'L', nextState:'qdec' } },
+      qtoPlus: { '0':{ write:'0', move:'L', nextState:'qtoPlus' }, '1':{ write:'1', move:'L', nextState:'qtoPlus' }, '+':{ write:'+', move:'L', nextState:'qinc' } },
+      qinc: { '0':{ write:'1', move:'R', nextState:'qfwd' }, '1':{ write:'0', move:'L', nextState:'qinc' }, 'B':{ write:'1', move:'R', nextState:'qfwd' } },
+      qfwd: { '0':{ write:'0', move:'R', nextState:'qfwd' }, '1':{ write:'1', move:'R', nextState:'qfwd' }, '+':{ write:'+', move:'R', nextState:'qfwd' }, 'B':{ write:'B', move:'L', nextState:'qchk' } },
+      qcleanA: { '0':{ write:'B', move:'L', nextState:'qcleanA' }, '1':{ write:'1', move:'S', nextState:'qaccept' }, 'B':{ write:'B', move:'R', nextState:'qfindRes' } },
+      qfindRes: { 'B':{ write:'B', move:'R', nextState:'qfindRes' }, '0':{ write:'0', move:'S', nextState:'qaccept' }, '1':{ write:'1', move:'S', nextState:'qaccept' } },
+      qaccept: {}, qreject: {}
+    },
+    _validate: function(input) {
+      if (!input || !input.includes('+')) return 'Input must be in format: binary+binary (e.g. 10+11).';
+      var parts = input.split('+');
+      if (parts.length !== 2) return 'Input must contain exactly one + separator.';
+      if (!/^[01]+$/.test(parts[0]) || !/^[01]+$/.test(parts[1])) return 'Both operands must be non-empty binary strings.';
+      return null;
+    }
+  },
+  binaryMultiply: {
+    name: 'Binary Multiply ×2', desc: 'Multiplies a binary number by 2 (left shift — appends 0). Input: 101 (5) → 1010 (10).',
+    badge: 'Arithmetic', input: '101', initialState: 'q0', acceptState: 'qaccept', rejectState: 'qreject',
+    transitions: {
+      q0: { '0':{ write:'0', move:'R', nextState:'q0' }, '1':{ write:'1', move:'R', nextState:'q0' }, 'B':{ write:'0', move:'R', nextState:'q1' } },
+      q1: { 'B':{ write:'B', move:'L', nextState:'qaccept' } },
+      qaccept: {}, qreject: {}
+    }
+  },
+  evenZeros: {
+    name: 'Even Number of Zeros', desc: 'Accepts binary strings with an even count of 0s.',
+    badge: 'DFA-like', input: '10100', initialState: 'q0', acceptState: 'qaccept', rejectState: 'qreject',
+    transitions: {
+      q0: { '0': { write:'0', move:'R', nextState:'q1' }, '1': { write:'1', move:'R', nextState:'q0' }, 'B': { write:'B', move:'R', nextState:'qaccept' } },
+      q1: { '0': { write:'0', move:'R', nextState:'q0' }, '1': { write:'1', move:'R', nextState:'q1' }, 'B': { write:'B', move:'R', nextState:'qreject' } },
+      qaccept: {}, qreject: {}
+    }
+  },
+  unaryAdd: {
+    name: 'Unary Addition', desc: 'Computes m+n in unary. Input: 1ᵐ+1ⁿ → 1ᵐ⁺ⁿ. Replaces + with 1 then removes trailing extra 1.',
+    badge: 'Arithmetic', input: '111+11', initialState: 'q0', acceptState: 'qaccept', rejectState: 'qreject',
+    transitions: {
+      q0: { '1': { write:'1', move:'R', nextState:'q0' }, '+': { write:'1', move:'R', nextState:'qscan' }, 'B': { write:'B', move:'R', nextState:'qaccept' } },
+      qscan: { '1': { write:'1', move:'R', nextState:'qscan' }, 'B': { write:'B', move:'L', nextState:'qerase' } },
+      qerase: { '1': { write:'B', move:'L', nextState:'qrewind' } },
+      qrewind: { '1': { write:'1', move:'L', nextState:'qrewind' }, 'B': { write:'B', move:'R', nextState:'qaccept' } },
+      qaccept: {}, qreject: {}
+    },
+    _validate: function(input) {
+      if (!input || input.length === 0) return 'Input must not be empty. Use format: 1ᵐ+1ⁿ (e.g. 111+11).';
+      if (!input.includes('+')) return 'Input must contain a + separator (e.g. 111+11).';
+      var parts = input.split('+');
+      if (parts.length !== 2) return 'Input must contain exactly one + separator.';
+      if (parts[0].length === 0 || parts[1].length === 0) return 'Both operands must be non-empty (e.g. 111+11, not +11 or 111+).';
+      if (!/^1+$/.test(parts[0]) || !/^1+$/.test(parts[1])) return 'Both operands must consist only of 1s (unary format).';
+      return null;
+    }
+  },
+  bitFlipper: {
+    name: 'Bit Flipper', desc: 'Flips every bit: 0→1 and 1→0. Simple symbol replacement.',
+    badge: 'Transform', input: '10110010', initialState: 'q0', acceptState: 'qaccept', rejectState: 'qreject',
+    transitions: {
+      q0: { '0': { write:'1', move:'R', nextState:'q0' }, '1': { write:'0', move:'R', nextState:'q0' }, 'B': { write:'B', move:'R', nextState:'qaccept' } },
+      qaccept: {}, qreject: {}
+    }
+  },
+  palindromeAB: {
+    name: 'Palindrome Checker {a,b}', desc: 'Checks if a string over {a,b} is a palindrome. Accepts abba, aba, a, aa. Rejects abab, ab.',
+    badge: 'Classic', input: 'abba', initialState: 'q0', acceptState: 'qaccept', rejectState: 'qreject',
+    transitions: {
+      q0: { 'a':{ write:'B', move:'R', nextState:'qa_find' }, 'b':{ write:'B', move:'R', nextState:'qb_find' }, 'B':{ write:'B', move:'R', nextState:'qaccept' } },
+      qa_find: { 'a':{ write:'a', move:'R', nextState:'qa_find' }, 'b':{ write:'b', move:'R', nextState:'qa_find' }, 'B':{ write:'B', move:'L', nextState:'qa_chk' } },
+      qa_chk: { 'a':{ write:'B', move:'L', nextState:'qback' }, 'b':{ write:'b', move:'R', nextState:'qreject' }, 'B':{ write:'B', move:'R', nextState:'qaccept' } },
+      qb_find: { 'a':{ write:'a', move:'R', nextState:'qb_find' }, 'b':{ write:'b', move:'R', nextState:'qb_find' }, 'B':{ write:'B', move:'L', nextState:'qb_chk' } },
+      qb_chk: { 'b':{ write:'B', move:'L', nextState:'qback' }, 'a':{ write:'a', move:'R', nextState:'qreject' }, 'B':{ write:'B', move:'R', nextState:'qaccept' } },
+      qback: { 'a':{ write:'a', move:'L', nextState:'qback' }, 'b':{ write:'b', move:'L', nextState:'qback' }, 'B':{ write:'B', move:'R', nextState:'q0' } },
+      qaccept: {}, qreject: {}
+    }
+  }
+};
+
+// ═══════════════════════════════════════════════════
+// UI STATE
+// ═══════════════════════════════════════════════════
+const tm = new TuringMachine();
+let runInterval = null, runSpeed = 300, currentExKey = 'binaryIncrement';
+
+// ═══════════════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════════════
+function initTheme() {
+  const saved = localStorage.getItem('tm-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('themeToggle').textContent = saved === 'dark' ? '☀️' : '🌙';
+}
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('tm-theme', next);
+  document.getElementById('themeToggle').textContent = next === 'dark' ? '☀️' : '🌙';
+  renderDiagram();
+});
+
+// ═══════════════════════════════════════════════════
+// TAPE RENDERING
+// ═══════════════════════════════════════════════════
+function renderTape() {
+  const cells = tm.getTapeCells(24);
+  const tape = document.getElementById('tape');
+  tape.innerHTML = cells.map(c => {
+    const isCur = c.index === tm.head, isBlk = c.symbol === 'B';
+    return `<div class="tape-cell${isCur ? ' current' : ''}${isBlk ? ' blank' : ''}">
+      <div class="cell-idx">${c.index}</div>
+      <div class="cell-sym">${isBlk ? '□' : c.symbol}</div>
+    </div>`;
+  }).join('');
+  const container = document.getElementById('tapeOuter');
+  const curCell = tape.querySelector('.current');
+  if (curCell) {
+    const off = curCell.offsetLeft + curCell.offsetWidth / 2 - container.clientWidth / 2;
+    container.scrollTo({ left: off, behavior: 'smooth' });
+  }
+  document.getElementById('stateVal').textContent = tm.state;
+  document.getElementById('stepVal').textContent = tm.stepCount;
+  document.getElementById('headVal').textContent = tm.head;
+  document.getElementById('readVal').textContent = tm.read();
+  const pill = document.getElementById('stateDisplay');
+  pill.className = 'tape-state-pill ' + (tm.accepted ? 'state-pill-accept' : tm.halted ? 'state-pill-reject' : 'state-pill-current');
+  const badge = document.getElementById('resultBadge');
+  if (tm.accepted) { badge.textContent = '✓ Accepted'; badge.className = 'tape-result-badge badge-accept'; }
+  else if (tm.halted) { badge.textContent = '✗ Rejected'; badge.className = 'tape-result-badge badge-reject'; }
+  else if (tm.stepCount > 0) { badge.textContent = '⟳ Running'; badge.className = 'tape-result-badge badge-running'; }
+  else { badge.textContent = 'Ready'; badge.className = 'tape-result-badge badge-ready'; }
+}
+
+// ═══════════════════════════════════════════════════
+// LOG RENDERING
+// ═══════════════════════════════════════════════════
+function renderLog() {
+  const log = document.getElementById('execLog');
+  if (tm.log.length === 0) { log.innerHTML = '<div class="log-placeholder">Run the simulator to see execution steps…</div>'; return; }
+  log.innerHTML = tm.log.map((e, i) => {
+    const isLast = i === tm.log.length - 1;
+    if (e.message) {
+      return `<div class="log-entry ${isLast ? 'active' : ''} ${tm.accepted ? 'accept-entry' : 'reject-entry'}">
+        <span class="log-step">#${e.step}</span><span class="log-content">${e.message}</span></div>`;
+    }
+    const cls = isLast ? (tm.halted ? (tm.accepted ? 'accept-entry' : 'reject-entry') : 'active') : '';
+    return `<div class="log-entry ${cls}">
+      <span class="log-step">#${e.step}</span>
+      <span class="log-content"><span class="log-state">${e.fromState}</span><span class="log-arrow"> , </span><span class="log-sym">${e.read}</span><span class="log-arrow"> → </span><span class="log-state">${e.toState}</span><span class="log-arrow"> | w:</span><span class="log-sym">${e.write}</span><span class="log-arrow"> m:</span><span class="log-sym">${e.move}</span></span></div>`;
+  }).join('');
+  log.scrollTop = log.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════════
+// TRANSITION TABLE
+// ═══════════════════════════════════════════════════
+function renderTransitionTable(transitions) {
+  const tbody = document.getElementById('transBody');
+  const rows = [];
+  const accSt = document.getElementById('cfgAccept').value.trim();
+  const rejSt = document.getElementById('cfgReject').value.trim();
+  for (const [from, tr] of Object.entries(transitions || {})) {
+    if (from === accSt || from === rejSt || from === 'qaccept' || from === 'qreject') continue;
+    for (const [read, t] of Object.entries(tr)) rows.push({ from, read, write: t.write, move: t.move, to: t.nextState });
+  }
+  tbody.innerHTML = rows.map(r => makeTableRow(r.from, r.read, r.write, r.move, r.to)).join('');
+  addRowListeners();
+}
+function makeTableRow(from, read, write, move, to) {
+  return `<tr><td><input class="cell-edit" value="${from}" placeholder="q0"></td><td><input class="cell-edit" value="${read}" placeholder="0"></td><td><input class="cell-edit" value="${write}" placeholder="0"></td><td><select class="move-sel"><option ${move==='R'?'selected':''}>R</option><option ${move==='L'?'selected':''}>L</option></select></td><td><input class="cell-edit" value="${to}" placeholder="q1"></td><td><button class="del-row" title="Delete">×</button></td></tr>`;
+}
+function addRowListeners() {
+  document.querySelectorAll('.del-row').forEach(btn => { btn.addEventListener('click', () => { btn.closest('tr').remove(); applyTable(); }); });
+  document.querySelectorAll('#transBody .cell-edit, #transBody .move-sel').forEach(el => { el.addEventListener('change', () => applyTable()); });
+}
+function addTransitionRow() {
+  const tbody = document.getElementById('transBody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = makeTableRow('', 'B', 'B', 'R', '').replace(/<tr>|<\/tr>/g, '');
+  tbody.appendChild(tr); addRowListeners(); tr.querySelector('.cell-edit').focus();
+}
+function parseTransitionTable() {
+  const trans = {};
+  document.querySelectorAll('#transBody tr').forEach(row => {
+    const inputs = row.querySelectorAll('.cell-edit');
+    if (inputs.length < 4) return;
+    const from = inputs[0].value.trim(), read = inputs[1].value.trim() || 'B';
+    const write = inputs[2].value.trim() || 'B', move = row.querySelector('.move-sel')?.value || 'R';
+    const to = inputs[3].value.trim();
+    if (!from || !to) return;
+    if (!trans[from]) trans[from] = {};
+    trans[from][read] = { write, move, nextState: to };
+  });
+  return trans;
+}
+function highlightTableRow(fromState, readSym) {
+  document.querySelectorAll('#transBody tr').forEach(row => {
+    const inputs = row.querySelectorAll('.cell-edit');
+    if (inputs.length < 4) return;
+    row.classList.toggle('highlighted', inputs[0].value.trim() === fromState && (inputs[1].value.trim() || 'B') === readSym);
+  });
+}
+function applyTable() { tm.transitions = parseTransitionTable(); renderDiagram(); }
+
+// ═══════════════════════════════════════════════════
+// TRANSITION DIAGRAM (Draggable + Zoomable SVG)
+// ═══════════════════════════════════════════════════
+let statePositions = {};
+let diagramZoomLevel = 1;
+let diagramPan = { x: 0, y: 0 };
+let dragState = null, dragOffset = { x: 0, y: 0 };
+let isPanning = false, panStart = { x: 0, y: 0 };
+let _dragRafPending = false;
+
+function makeSVGEl(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function renderDiagram() {
+  const container = document.getElementById('diagramCanvas');
+  const svg = document.getElementById('diagram-svg');
+  const W = container.clientWidth || 800;
+  const H = container.clientHeight || 480;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = '';
+
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const acceptSt = document.getElementById('cfgAccept').value.trim() || 'qaccept';
+  const rejectSt = document.getElementById('cfgReject').value.trim() || 'qreject';
+  const initSt = document.getElementById('cfgInitial').value.trim() || 'q0';
+  // Use only connected states so disconnected qreject/qaccept don't appear as orphans
+  const states = tm.getConnectedStates();
+  if (states.length === 0) return;
+
+  const stateR = Math.min(30, Math.max(20, Math.floor(Math.min(W, H) / (states.length + 3))));
+  const cx = W / 2, cy = H / 2;
+  const layoutR = Math.min(W, H) / 2 - stateR - 50;
+
+  // Initialize positions if needed
+  states.forEach((s, i) => {
+    if (!statePositions[s]) {
+      const angle = (2 * Math.PI * i / states.length) - Math.PI / 2;
+      statePositions[s] = { x: cx + layoutR * Math.cos(angle), y: cy + layoutR * Math.sin(angle) };
+    }
+  });
+  // Remove stale positions
+  const stateSet = new Set(states);
+  for (const k of Object.keys(statePositions)) { if (!stateSet.has(k)) delete statePositions[k]; }
+
+  // Defs
+  const defs = makeSVGEl('defs');
+  const colors = { normal: isDark ? '#475569' : '#94a3b8', active: isDark ? '#6366f1' : '#4338ca', accept: isDark ? '#34d399' : '#059669', reject: isDark ? '#f87171' : '#dc2626' };
+  [['arr', colors.normal], ['arr-active', colors.active]].forEach(([id, fill]) => {
+    const mk = makeSVGEl('marker', { id, markerWidth: '8', markerHeight: '6', refX: '8', refY: '3', orient: 'auto' });
+    mk.appendChild(makeSVGEl('polygon', { points: '0 0,8 3,0 6', fill }));
+    defs.appendChild(mk);
+  });
+  svg.appendChild(defs);
+
+  // Root group for pan/zoom
+  const root = makeSVGEl('g', { id: 'diagram-root', transform: `translate(${diagramPan.x},${diagramPan.y}) scale(${diagramZoomLevel})` });
+
+  // Group transitions by (from→to), only include edges where BOTH states are in our displayed set
+  const arrows = {};
+  for (const [from, tr] of Object.entries(tm.transitions)) {
+    for (const [read, t] of Object.entries(tr)) {
+      if (!stateSet.has(from) || !stateSet.has(t.nextState)) continue;
+      const key = `${from}→${t.nextState}`;
+      if (!arrows[key]) arrows[key] = { from, to: t.nextState, labels: [] };
+      arrows[key].labels.push(`${read}/${t.write},${t.move}`);
+    }
+  }
+
+  // Check for bidirectional edges
+  const bidir = new Set();
+  for (const key of Object.keys(arrows)) {
+    const [f, t] = key.split('→');
+    if (f !== t && arrows[`${t}→${f}`]) bidir.add(key);
+  }
+
+  // Draw arrows
+  for (const [key, arrow] of Object.entries(arrows)) {
+    if (!statePositions[arrow.from] || !statePositions[arrow.to]) continue;
+    const isCur = (arrow.from === tm.state);
+    const color = isCur ? colors.active : colors.normal;
+    const marker = isCur ? 'url(#arr-active)' : 'url(#arr)';
+    const label = arrow.labels.join('\n');
+    const curve = bidir.has(key) ? 35 : 20;
+    if (arrow.from === arrow.to) {
+      drawSelfLoop(root, statePositions[arrow.from], stateR, label, color, marker, isDark);
+    } else {
+      drawArrow(root, statePositions[arrow.from], statePositions[arrow.to], stateR, label, color, marker, isDark, curve);
+    }
+  }
+
+  // Draw states
+  states.forEach(s => {
+    if (!statePositions[s]) return;
+    const { x, y } = statePositions[s];
+    const isCur = s === tm.state, isAcc = s === acceptSt, isRej = s === rejectSt;
+    let fill = isDark ? '#1e293b' : '#ffffff';
+    let stroke = isDark ? '#475569' : '#cbd5e1';
+    let strokeW = '1.5', textFill = isDark ? '#e2e8f0' : '#1e293b';
+    if (isCur) { fill = isDark ? 'rgba(99,102,241,.25)' : 'rgba(67,56,202,.1)'; stroke = colors.active; strokeW = '2.5'; textFill = colors.active; }
+    else if (isAcc) { stroke = colors.accept; }
+    else if (isRej) { stroke = colors.reject; }
+
+    const g = makeSVGEl('g', { 'data-state': s, style: 'cursor:grab' });
+    if (isAcc) g.appendChild(makeSVGEl('circle', { cx: x, cy: y, r: stateR + 5, fill: 'none', stroke: colors.accept, 'stroke-width': '1.5' }));
+    g.appendChild(makeSVGEl('circle', { cx: x, cy: y, r: stateR, fill, stroke, 'stroke-width': strokeW }));
+    if (isRej) {
+      g.appendChild(makeSVGEl('line', { x1: x - stateR * 0.6, y1: y - stateR * 0.6, x2: x + stateR * 0.6, y2: y + stateR * 0.6, stroke: colors.reject, 'stroke-width': '1.5', opacity: '.4' }));
+    }
+    const fontSize = Math.max(9, Math.min(13, stateR * 0.6));
+    const displayName = s.length > 8 ? s.slice(0, 7) + '…' : s;
+    const txt = makeSVGEl('text', { x, y: y + fontSize * 0.35, 'text-anchor': 'middle', fill: textFill, 'font-size': fontSize, 'font-family': 'JetBrains Mono', 'font-weight': isCur ? '600' : '400' });
+    txt.textContent = displayName;
+    g.appendChild(txt);
+    if (isCur) g.classList.add('state-active-glow');
+    root.appendChild(g);
+  });
+
+  // Initial state arrow
+  if (statePositions[initSt]) {
+    const { x, y } = statePositions[initSt];
+    const arrLen = 30;
+    root.appendChild(makeSVGEl('line', { x1: x - stateR - arrLen, y1: y, x2: x - stateR - 2, y2: y, stroke: colors.normal, 'stroke-width': '1.5', 'marker-end': 'url(#arr)' }));
+    const lbl = makeSVGEl('text', { x: x - stateR - arrLen - 4, y: y + 4, fill: isDark ? '#64748b' : '#94a3b8', 'font-size': '9', 'font-family': 'JetBrains Mono', 'text-anchor': 'end' });
+    lbl.textContent = 'start';
+    root.appendChild(lbl);
+  }
+
+  svg.appendChild(root);
+  // Attach drag listeners to newly created state groups (these are on child nodes, removed with innerHTML clear)
+  svg.querySelectorAll('g[data-state]').forEach(g => {
+    g.addEventListener('pointerdown', e => {
+      e.stopPropagation();
+      dragState = g.getAttribute('data-state');
+      const pt = svgPoint(svg, e);
+      dragOffset = { x: pt.x / diagramZoomLevel - diagramPan.x / diagramZoomLevel - statePositions[dragState].x, y: pt.y / diagramZoomLevel - diagramPan.y / diagramZoomLevel - statePositions[dragState].y };
+      g.style.cursor = 'grabbing';
+    });
+  });
+}
+
+function drawArrow(svg, from, to, r, label, color, marker, isDark, curvature = 20) {
+  const dx = to.x - from.x, dy = to.y - from.y;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+  const ux = dx / dist, uy = dy / dist;
+  const sx = from.x + ux * r, sy = from.y + uy * r;
+  const ex = to.x - ux * (r + 8), ey = to.y - uy * (r + 8);
+  const mx = (sx + ex) / 2 - uy * curvature, my = (sy + ey) / 2 + ux * curvature;
+  svg.appendChild(makeSVGEl('path', { d: `M ${sx} ${sy} Q ${mx} ${my} ${ex} ${ey}`, fill: 'none', stroke: color, 'stroke-width': '1.5', 'marker-end': marker }));
+  // Label offset: push further away from curve to avoid overlap
+  const baseLx = 0.25 * sx + 0.5 * mx + 0.25 * ex;
+  const baseLy = 0.25 * sy + 0.5 * my + 0.25 * ey;
+  const labelPushDistance = 14;
+  const lx = baseLx - uy * labelPushDistance;
+  const ly = baseLy + ux * labelPushDistance;
+  const lines = label.split('\n');
+  const labelColor = color === (isDark ? '#6366f1' : '#4338ca') ? (isDark ? '#818cf8' : '#4f46e5') : (isDark ? '#64748b' : '#94a3b8');
+  const bgW = Math.max(...lines.map(l => l.length)) * 5.5 + 10;
+  const bgH = lines.length * 12 + 6;
+  svg.appendChild(makeSVGEl('rect', { x: lx - bgW / 2, y: ly - (lines.length - 1) * 6 - 10, width: bgW, height: bgH, rx: '3', fill: isDark ? 'rgba(15,23,42,.9)' : 'rgba(255,255,255,.95)', stroke: isDark ? 'rgba(71,85,105,.4)' : 'rgba(203,213,225,.6)', 'stroke-width': '.5' }));
+  lines.forEach((line, i) => {
+    const t = makeSVGEl('text', { x: lx, y: ly - (lines.length - 1) * 6 + i * 12, 'text-anchor': 'middle', fill: labelColor, 'font-size': '8', 'font-family': 'JetBrains Mono' });
+    t.textContent = line; svg.appendChild(t);
+  });
+}
+
+function drawSelfLoop(svg, pos, r, label, color, marker, isDark) {
+  const { x, y } = pos;
+  svg.appendChild(makeSVGEl('path', { d: `M ${x - 8} ${y - r + 2} C ${x - 35} ${y - r - 50} ${x + 35} ${y - r - 50} ${x + 8} ${y - r + 2}`, fill: 'none', stroke: color, 'stroke-width': '1.5', 'marker-end': marker }));
+  const lines = label.split('\n');
+  const labelColor = color === (isDark ? '#6366f1' : '#4338ca') ? (isDark ? '#818cf8' : '#4f46e5') : (isDark ? '#64748b' : '#94a3b8');
+  const bgW = Math.max(...lines.map(l => l.length)) * 5.5 + 10;
+  const bgH = lines.length * 12 + 6;
+  const ly = y - r - 48;
+  svg.appendChild(makeSVGEl('rect', { x: x - bgW / 2, y: ly - (lines.length - 1) * 6 - 10, width: bgW, height: bgH, rx: '3', fill: isDark ? 'rgba(15,23,42,.9)' : 'rgba(255,255,255,.95)', stroke: isDark ? 'rgba(71,85,105,.4)' : 'rgba(203,213,225,.6)', 'stroke-width': '.5' }));
+  lines.forEach((line, i) => {
+    const t = makeSVGEl('text', { x, y: ly - (lines.length - 1) * 6 + i * 12, 'text-anchor': 'middle', fill: labelColor, 'font-size': '8', 'font-family': 'JetBrains Mono' });
+    t.textContent = line; svg.appendChild(t);
+  });
+}
+
+function svgPoint(svg, e) {
+  const rect = svg.getBoundingClientRect();
+  const vb = svg.viewBox.baseVal;
+  return { x: (e.clientX - rect.left) * vb.width / rect.width, y: (e.clientY - rect.top) * vb.height / rect.height };
+}
+
+// ONE-TIME event listeners on the SVG and canvas (never re-added)
+(function initDiagramEvents() {
+  const svg = document.getElementById('diagram-svg');
+  const canvas = document.getElementById('diagramCanvas');
+
+  // Drag + Pan move handler (single listener, rAF throttled)
+  svg.addEventListener('pointermove', e => {
+    if (dragState && statePositions[dragState]) {
+      if (_dragRafPending) return;
+      _dragRafPending = true;
+      requestAnimationFrame(() => {
+        _dragRafPending = false;
+        const pt = svgPoint(svg, e);
+        statePositions[dragState].x = pt.x / diagramZoomLevel - diagramPan.x / diagramZoomLevel - dragOffset.x;
+        statePositions[dragState].y = pt.y / diagramZoomLevel - diagramPan.y / diagramZoomLevel - dragOffset.y;
+        renderDiagram();
+      });
+    } else if (isPanning) {
+      const dx = e.clientX - panStart.x, dy = e.clientY - panStart.y;
+      diagramPan.x += dx; diagramPan.y += dy;
+      panStart = { x: e.clientX, y: e.clientY };
+      const root = document.getElementById('diagram-root');
+      if (root) root.setAttribute('transform', `translate(${diagramPan.x},${diagramPan.y}) scale(${diagramZoomLevel})`);
+    }
+  });
+
+  svg.addEventListener('pointerup', () => { dragState = null; isPanning = false; });
+  svg.addEventListener('pointerleave', () => { dragState = null; isPanning = false; });
+
+  // Pan on background drag
+  canvas.addEventListener('pointerdown', e => {
+    if (e.target === svg || e.target === canvas) {
+      isPanning = true; panStart = { x: e.clientX, y: e.clientY };
+    }
+  });
+
+  // Zoom with scroll
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+    diagramZoomLevel = Math.max(0.25, Math.min(3, diagramZoomLevel * factor));
+    const root = document.getElementById('diagram-root');
+    if (root) root.setAttribute('transform', `translate(${diagramPan.x},${diagramPan.y}) scale(${diagramZoomLevel})`);
+  }, { passive: false });
+})();
+
+function diagramZoom(factor) {
+  diagramZoomLevel = Math.max(0.25, Math.min(3, diagramZoomLevel * factor));
+  const root = document.getElementById('diagram-root');
+  if (root) root.setAttribute('transform', `translate(${diagramPan.x},${diagramPan.y}) scale(${diagramZoomLevel})`);
+}
+function diagramResetView() {
+  diagramZoomLevel = 1; diagramPan = { x: 0, y: 0 }; statePositions = {};
+  renderDiagram();
+}
+
+// ═══════════════════════════════════════════════════
+// CUSTOM MACHINE BUILDER — Formal TM Definition
+// ═══════════════════════════════════════════════════
+function toggleBuilder() {
+  const body = document.getElementById('builderBody');
+  const toggle = document.getElementById('builderToggle');
+  const isOpen = body.classList.toggle('open');
+  toggle.classList.toggle('open', isOpen);
+}
+
+function parseRulesText(text) {
+  const lines = text.split('\n');
+  const transitions = {};
+  const errors = [];
+  let ruleCount = 0;
+  lines.forEach((line, idx) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('//')) return;
+    // Support both -> and → and L/R/S
+    const normalized = trimmed.replace(/→/g, '->');
+    // More flexible regex: read/write can be multi-char or single char
+    const match = normalized.match(/^(\S+)\s*,\s*(\S+)\s*->\s*(\S+)\s*,\s*(\S+)\s*,\s*(L|R|S)$/i);
+    if (!match) { errors.push(`Line ${idx + 1}: Invalid — "${trimmed}"`); return; }
+    const [, from, read, to, write, move] = match;
+    if (!transitions[from]) transitions[from] = {};
+    transitions[from][read] = { write, move: move.toUpperCase(), nextState: to };
+    ruleCount++;
+  });
+  return { transitions, errors, ruleCount };
+}
+
+function buildMachine() {
+  const feedback = document.getElementById('builderFeedback');
+  const vPanel = document.getElementById('builderValidation');
+  vPanel.style.display = 'none';
+
+  // Parse rules
+  const text = document.getElementById('builderRules').value;
+  const { transitions, errors, ruleCount } = parseRulesText(text);
+  if (errors.length > 0) {
+    feedback.className = 'builder-feedback error';
+    feedback.textContent = errors[0] + (errors.length > 1 ? ` (+${errors.length - 1} more)` : '');
+    return;
+  }
+  if (ruleCount === 0) { feedback.className = 'builder-feedback error'; feedback.textContent = 'No valid rules found.'; return; }
+
+  // Read formal fields (use them if provided, otherwise infer from existing config)
+  const fmStart = document.getElementById('fmStart').value.trim();
+  const fmAccept = document.getElementById('fmAcceptStates').value.trim();
+  const fmReject = document.getElementById('fmRejectState').value.trim();
+  const fmInput = document.getElementById('fmInput').value.trim();
+  const fmBlank = document.getElementById('fmBlank').value.trim() || 'B';
+  const fmHeadPos = parseInt(document.getElementById('fmHeadPos').value) || 0;
+
+  // Apply to simulator config fields
+  if (fmStart) document.getElementById('cfgInitial').value = fmStart;
+  if (fmAccept) document.getElementById('cfgAccept').value = fmAccept;
+  if (fmReject) document.getElementById('cfgReject').value = fmReject;
+  if (fmInput !== '') document.getElementById('inputStr').value = fmInput;
+
+  // Load machine
+  const config = {
+    transitions,
+    initialState: fmStart || document.getElementById('cfgInitial').value.trim() || 'q0',
+    acceptState: fmAccept || document.getElementById('cfgAccept').value.trim() || 'qaccept',
+    rejectState: fmReject || document.getElementById('cfgReject').value.trim() || 'qreject'
+  };
+  const inputStr = fmInput !== '' ? fmInput : document.getElementById('inputStr').value;
+  tm.load(inputStr, config);
+  if (fmHeadPos > 0) tm.head = fmHeadPos;
+  renderTransitionTable(transitions);
+  statePositions = {};
+  renderTape(); renderLog(); renderDiagram();
+  feedback.className = 'builder-feedback success';
+  feedback.textContent = `✓ Built: ${ruleCount} rules, ${tm.getAllStates().length} states. Machine ready.`;
+}
+
+function validateMachine() {
+  const feedback = document.getElementById('builderFeedback');
+  const vPanel = document.getElementById('builderValidation');
+  const results = [];
+
+  // Parse rules
+  const text = document.getElementById('builderRules').value;
+  const { transitions, errors, ruleCount } = parseRulesText(text);
+
+  if (errors.length > 0) {
+    results.push(...errors.map(e => `<div class="v-err">✗ ${e}</div>`));
+  }
+  if (ruleCount === 0) {
+    results.push('<div class="v-err">✗ No transition rules defined</div>');
+    vPanel.innerHTML = results.join(''); vPanel.style.display = 'block';
+    feedback.className = 'builder-feedback error'; feedback.textContent = 'Validation failed.';
+    return;
+  }
+  results.push(`<div class="v-ok">✓ ${ruleCount} rules parsed successfully</div>`);
+
+  // Read formal definition fields
+  const fmStatesRaw = document.getElementById('fmStates').value.trim();
+  const fmSigmaRaw = document.getElementById('fmSigma').value.trim();
+  const fmGammaRaw = document.getElementById('fmGamma').value.trim();
+  const fmBlank = document.getElementById('fmBlank').value.trim() || 'B';
+  const fmStart = document.getElementById('fmStart').value.trim();
+  const fmAccept = document.getElementById('fmAcceptStates').value.trim();
+  const fmReject = document.getElementById('fmRejectState').value.trim();
+
+  // Infer states/symbols from transitions
+  const inferredStates = new Set();
+  const inferredReadSyms = new Set();
+  const inferredWriteSyms = new Set();
+  for (const [st, tr] of Object.entries(transitions)) {
+    inferredStates.add(st);
+    for (const [read, t] of Object.entries(tr)) {
+      inferredStates.add(t.nextState);
+      inferredReadSyms.add(read);
+      inferredWriteSyms.add(t.write);
+    }
+  }
+
+  // Validate Q
+  if (fmStatesRaw) {
+    const Q = new Set(fmStatesRaw.split(',').map(s => s.trim()).filter(Boolean));
+    const missingStates = [...inferredStates].filter(s => !Q.has(s));
+    if (missingStates.length > 0) {
+      results.push(`<div class="v-err">✗ States in rules but not in Q: ${missingStates.join(', ')}</div>`);
+    } else {
+      results.push(`<div class="v-ok">✓ All rule states are in Q (${Q.size} states)</div>`);
+    }
+    const unusedStates = [...Q].filter(s => !inferredStates.has(s));
+    if (unusedStates.length > 0) {
+      results.push(`<div class="v-warn">⚠ States in Q but unused in rules: ${unusedStates.join(', ')}</div>`);
+    }
+  } else {
+    results.push(`<div class="v-warn">⚠ Q not specified — inferred ${inferredStates.size} states from rules</div>`);
+  }
+
+  // Validate Σ
+  if (fmSigmaRaw) {
+    const sigma = new Set(fmSigmaRaw.split(',').map(s => s.trim()).filter(Boolean));
+    results.push(`<div class="v-ok">✓ Input alphabet Σ = {${[...sigma].join(', ')}}</div>`);
+  } else {
+    const nonBlankReads = [...inferredReadSyms].filter(s => s !== fmBlank);
+    results.push(`<div class="v-warn">⚠ Σ not specified — input symbols from rules: {${nonBlankReads.join(', ')}}</div>`);
+  }
+
+  // Validate Γ
+  if (fmGammaRaw) {
+    const gamma = new Set(fmGammaRaw.split(',').map(s => s.trim()).filter(Boolean));
+    const allSyms = new Set([...inferredReadSyms, ...inferredWriteSyms]);
+    const missingGamma = [...allSyms].filter(s => !gamma.has(s));
+    if (missingGamma.length > 0) {
+      results.push(`<div class="v-err">✗ Symbols used but not in Γ: {${missingGamma.join(', ')}}</div>`);
+    } else {
+      results.push(`<div class="v-ok">✓ All symbols are in Γ (${gamma.size} symbols)</div>`);
+    }
+    if (!gamma.has(fmBlank)) {
+      results.push(`<div class="v-err">✗ Blank symbol '${fmBlank}' not in Γ</div>`);
+    }
+  }
+
+  // Validate special states
+  if (fmStart) {
+    if (inferredStates.has(fmStart)) results.push(`<div class="v-ok">✓ Start state '${fmStart}' exists in transitions</div>`);
+    else results.push(`<div class="v-err">✗ Start state '${fmStart}' has no outgoing transitions</div>`);
+  }
+  if (fmAccept) results.push(`<div class="v-ok">✓ Accept state: ${fmAccept}</div>`);
+  if (fmReject) results.push(`<div class="v-ok">✓ Reject state: ${fmReject}</div>`);
+  if (fmAccept && fmReject && fmAccept === fmReject) {
+    results.push(`<div class="v-err">✗ Accept and reject states must be different</div>`);
+  }
+
+  // Check determinism
+  let deterministic = true;
+  for (const [st, tr] of Object.entries(transitions)) {
+    const reads = Object.keys(tr);
+    const unique = new Set(reads);
+    if (unique.size < reads.length) { deterministic = false; results.push(`<div class="v-err">✗ Non-deterministic: state '${st}' has duplicate read symbols</div>`); }
+  }
+  if (deterministic) results.push('<div class="v-ok">✓ Machine is deterministic</div>');
+
+  vPanel.innerHTML = results.join('');
+  vPanel.style.display = 'block';
+
+  const hasErrors = results.some(r => r.includes('v-err'));
+  feedback.className = hasErrors ? 'builder-feedback error' : 'builder-feedback success';
+  feedback.textContent = hasErrors ? 'Validation found issues — see details below.' : '✓ Validation passed!';
+}
+
+function autoFillFormal() {
+  const text = document.getElementById('builderRules').value;
+  const { transitions, errors, ruleCount } = parseRulesText(text);
+  if (ruleCount === 0) {
+    // Also try from existing transition table
+    const tableTrans = parseTransitionTable();
+    if (Object.keys(tableTrans).length === 0) return;
+    document.getElementById('builderRules').value = '';
+    for (const [from, tr] of Object.entries(tableTrans)) {
+      for (const [read, t] of Object.entries(tr)) {
+        document.getElementById('builderRules').value += `${from}, ${read} → ${t.nextState}, ${t.write}, ${t.move}\n`;
+      }
+    }
+    autoFillFormal();
+    return;
+  }
+
+  const states = new Set();
+  const readSyms = new Set();
+  const writeSyms = new Set();
+  for (const [st, tr] of Object.entries(transitions)) {
+    states.add(st);
+    for (const [read, t] of Object.entries(tr)) {
+      states.add(t.nextState);
+      readSyms.add(read);
+      writeSyms.add(t.write);
+    }
+  }
+  const allSyms = new Set([...readSyms, ...writeSyms]);
+  const blank = 'B';
+  const inputSyms = [...readSyms].filter(s => s !== blank);
+  allSyms.add(blank);
+
+  document.getElementById('fmStates').value = [...states].join(', ');
+  document.getElementById('fmSigma').value = inputSyms.join(', ');
+  document.getElementById('fmGamma').value = [...allSyms].join(', ');
+  document.getElementById('fmBlank').value = blank;
+
+  // Try to guess start/accept/reject
+  const stateArr = [...states];
+  const start = stateArr.find(s => s === 'q0') || stateArr[0];
+  const accept = stateArr.find(s => /accept|acc|halt|H|qf/i.test(s)) || '';
+  const reject = stateArr.find(s => /reject|rej/i.test(s)) || '';
+  document.getElementById('fmStart').value = start;
+  if (accept) document.getElementById('fmAcceptStates').value = accept;
+  if (reject) document.getElementById('fmRejectState').value = reject;
+
+  const feedback = document.getElementById('builderFeedback');
+  feedback.className = 'builder-feedback success';
+  feedback.textContent = `Auto-filled: ${states.size} states, ${inputSyms.length} input symbols, ${allSyms.size} tape symbols.`;
+}
+
+function exportRules() {
+  const trans = parseTransitionTable();
+  const lines = [];
+  for (const [from, tr] of Object.entries(trans)) {
+    for (const [read, t] of Object.entries(tr)) {
+      lines.push(`${from}, ${read} → ${t.nextState}, ${t.write}, ${t.move}`);
+    }
+  }
+  document.getElementById('builderRules').value = lines.join('\n');
+  const body = document.getElementById('builderBody');
+  if (!body.classList.contains('open')) toggleBuilder();
+  const feedback = document.getElementById('builderFeedback');
+  feedback.className = 'builder-feedback success';
+  feedback.textContent = `Exported ${lines.length} rules.`;
+  // Also auto-fill formal fields
+  autoFillFormal();
+}
+
+// ═══════════════════════════════════════════════════
+// CONTROLS
+// ═══════════════════════════════════════════════════
+function getConfig() {
+  return { transitions: parseTransitionTable(), initialState: document.getElementById('cfgInitial').value.trim() || 'q0', acceptState: document.getElementById('cfgAccept').value.trim() || 'qaccept', rejectState: document.getElementById('cfgReject').value.trim() || 'qreject' };
+}
+function doReset() {
+  doPause();
+  const input = document.getElementById('inputStr').value;
+  const ex = EXAMPLES[currentExKey];
+  // If current example has validator, run it
+  if (ex && ex._validate) {
+    const err = ex._validate(input);
+    if (err) {
+      const badge = document.getElementById('resultBadge');
+      badge.textContent = '\u26a0 ' + err;
+      badge.className = 'tape-result-badge badge-reject';
+      tm.load(input, getConfig());
+      tm.halted = true; tm.accepted = false;
+      renderTape(); renderLog(); renderDiagram();
+      return;
+    }
+  }
+  // If current example has dynamic init, regenerate transitions from new input
+  if (ex && ex._dynamicInit) {
+    const newTrans = ex._dynamicInit(input);
+    const config = { transitions: newTrans, initialState: ex.initialState, acceptState: ex.acceptState, rejectState: ex.rejectState };
+    tm.load(input, config);
+    renderTransitionTable(newTrans);
+  } else {
+    tm.load(input, getConfig());
+  }
+  renderTape(); renderLog(); renderDiagram();
+  highlightTableRow('', '');
+  document.getElementById('resultBadge').textContent = 'Ready';
+  document.getElementById('resultBadge').className = 'tape-result-badge badge-ready';
+  validateRegex();
+}
+let _isAutoRunning = false;
+function doStep() {
+  if (tm.halted) return;
+  const prevState = tm.state, prevRead = tm.read();
+  const entry = tm.step();
+  if (entry) highlightTableRow(prevState, prevRead);
+  renderTape(); renderLog();
+  // Skip expensive diagram re-render during auto-run (update only on halt)
+  if (!_isAutoRunning || tm.halted) renderDiagram();
+}
+function doStepBack() {
+  if (tm.history.length === 0) return;
+  tm.stepBack(); renderTape(); renderLog(); renderDiagram(); highlightTableRow('', '');
+}
+function doRun() {
+  if (tm.halted) doReset();
+  _isAutoRunning = true;
+  document.getElementById('btnRun').style.display = 'none';
+  document.getElementById('btnPause').style.display = '';
+  runInterval = setInterval(() => { if (tm.halted) { doPause(); return; } doStep(); }, runSpeed);
+}
+function doPause() {
+  _isAutoRunning = false;
+  clearInterval(runInterval); runInterval = null;
+  document.getElementById('btnRun').style.display = '';
+  document.getElementById('btnPause').style.display = 'none';
+  renderDiagram(); // update diagram on pause
+}
+function doStop() { doPause(); doReset(); }
+function updateSpeed(val) {
+  const speeds = [800, 600, 450, 300, 200, 120, 80, 50, 30, 15];
+  runSpeed = speeds[Math.min(val - 1, speeds.length - 1)];
+  document.getElementById('speedVal').textContent = runSpeed + 'ms';
+  if (runInterval) { doPause(); doRun(); }
+}
+function clearLog() { tm.log = []; renderLog(); }
+
+// ═══════════════════════════════════════════════════
+// EXAMPLE LOADING
+// ═══════════════════════════════════════════════════
+function loadExample(key) {
+  const ex = EXAMPLES[key]; if (!ex) return;
+  currentExKey = key; doPause();
+  document.getElementById('inputStr').value = ex.input;
+  document.getElementById('cfgInitial').value = ex.initialState;
+  document.getElementById('cfgAccept').value = ex.acceptState;
+  document.getElementById('cfgReject').value = ex.rejectState;
+  // If example has dynamic initializer, generate transitions from input
+  let transitions = ex.transitions;
+  if (ex._dynamicInit) {
+    transitions = ex._dynamicInit(ex.input);
+  }
+  tm.load(ex.input, { transitions, initialState: ex.initialState, acceptState: ex.acceptState, rejectState: ex.rejectState });
+  renderTransitionTable(transitions);
+  statePositions = {};
+  renderTape(); renderLog(); renderDiagram();
+  document.getElementById('regexStatus').textContent = '';
+  validateRegex();
+  initSymbolPalette();
+  scrollToSim();
+}
+function loadSelectedExample() { loadExample(document.getElementById('exampleSelect').value); }
+function clearAll() {
+  doPause();
+  tm.load('', { transitions: {}, initialState: 'q0', acceptState: 'qaccept', rejectState: 'qreject' });
+  document.getElementById('transBody').innerHTML = '';
+  document.getElementById('inputStr').value = '';
+  statePositions = {};
+  renderTape(); renderLog(); renderDiagram();
+}
+function validateRegex() {
+  const pat = document.getElementById('regexPat').value.trim();
+  const input = document.getElementById('inputStr').value;
+  const status = document.getElementById('regexStatus');
+  if (!pat) { status.textContent = ''; return; }
+  try {
+    // Validate the regex first by constructing it separately
+    new RegExp(pat);
+    // Now wrap with anchors
+    const re = new RegExp('^(?:' + pat + ')$');
+    if (re.test(input)) { status.textContent = '✓ Match'; status.style.color = 'var(--accept)'; }
+    else { status.textContent = '✗ No match'; status.style.color = 'var(--reject)'; }
+  } catch (e) {
+    status.textContent = '⚠ Invalid regex: ' + (e.message ? e.message.slice(0, 40) : 'parse error');
+    status.style.color = 'var(--gold)';
+  }
+}
+function loadRegexToTape() {
+  const pat = document.getElementById('regexPat').value.trim();
+  if (!pat) { const s = document.getElementById('regexStatus'); s.textContent = '⚠ Enter a regex pattern first'; s.style.color = 'var(--gold)'; return; }
+  document.getElementById('inputStr').value = pat;
+  doReset();
+  const s = document.getElementById('regexStatus');
+  s.textContent = '✓ Pattern loaded to tape';
+  s.style.color = 'var(--accept)';
+}
+
+// ═══════════════════════════════════════════════════
+// SYMBOL PALETTE
+// ═══════════════════════════════════════════════════
+const DEFAULT_PALETTE_SYMBOLS = ['a','b','c','0','1','#','+','B','(',')','{','}','*','X','Y'];
+function initSymbolPalette() {
+  const palette = document.getElementById('symbolPalette');
+  if (!palette) return;
+  // Collect symbols from current transitions + defaults
+  const syms = new Set(DEFAULT_PALETTE_SYMBOLS);
+  for (const [, tr] of Object.entries(tm.transitions)) {
+    for (const [read, t] of Object.entries(tr)) {
+      if (read && read !== 'B') syms.add(read);
+      if (t.write && t.write !== 'B') syms.add(t.write);
+    }
+  }
+  const sorted = [...syms].sort((a, b) => a.localeCompare(b));
+  palette.innerHTML = '<span class="symbol-palette-label">Symbol Palette — click to insert</span>' +
+    sorted.map(s => `<button class="sym-btn" type="button" data-sym="${s.replace(/"/g,'&quot;')}" title="Insert '${s}'">${s === 'B' ? '□' : s}</button>`).join('');
+  palette.querySelectorAll('.sym-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const sym = btn.getAttribute('data-sym');
+      const input = document.getElementById('inputStr');
+      const start = input.selectionStart ?? input.value.length;
+      const end = input.selectionEnd ?? input.value.length;
+      input.value = input.value.slice(0, start) + sym + input.value.slice(end);
+      input.focus();
+      input.selectionStart = input.selectionEnd = start + sym.length;
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// POPULATE UI
+// ═══════════════════════════════════════════════════
+function initExamples() {
+  const sel = document.getElementById('exampleSelect');
+  const grid = document.getElementById('examplesGrid');
+  const qc = document.getElementById('quick-cards');
+  let selHTML = '', gridHTML = '', qcHTML = '';
+  const keys = Object.keys(EXAMPLES);
+  keys.forEach((k, i) => {
+    const ex = EXAMPLES[k];
+    selHTML += `<option value="${k}">${ex.name}</option>`;
+    gridHTML += `<div class="ex-card" onclick="loadExample('${k}')">
+      <div class="ex-num">0${i + 1}</div><div class="ex-name">${ex.name}</div>
+      <div class="ex-desc">${ex.desc}</div>
+      <span class="ex-input">Input: "${ex.input || '(blank)'}"</span>
+      <button class="ex-launch" onclick="event.stopPropagation();loadExample('${k}')">Load →</button></div>`;
+    qcHTML += `<div class="quick-card" onclick="loadExample('${k}')">
+      <div class="qc-badge">${ex.badge}</div><div class="qc-name">${ex.name}</div>
+      <div class="qc-desc">${ex.desc}</div></div>`;
+  });
+  sel.innerHTML = selHTML; grid.innerHTML = gridHTML; qc.innerHTML = qcHTML;
+}
+
+// ═══════════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════════
+function scrollToSim() { document.getElementById('simulator').scrollIntoView({ behavior: 'smooth' }); }
+function closeMobile() { document.getElementById('mobile-menu').classList.remove('open'); }
+document.getElementById('hamburger').addEventListener('click', () => { document.getElementById('mobile-menu').classList.toggle('open'); });
+const sections = ['home', 'simulator', 'examples', 'theory', 'about'];
+window.addEventListener('scroll', () => {
+  let cur = sections[0];
+  sections.forEach(id => { const el = document.getElementById(id); if (el && el.getBoundingClientRect().top < 120) cur = id; });
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    const href = a.getAttribute('href').slice(1);
+    a.classList.toggle('active-pill', href === cur); a.classList.remove('active');
+  });
+});
+let resizeTimer;
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { statePositions = {}; renderDiagram(); }, 300); });
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  initTheme(); initExamples(); loadExample('binaryIncrement'); updateSpeed(5);
+  initSymbolPalette();
+  // Auto-validate regex when input or pattern changes
+  document.getElementById('inputStr').addEventListener('input', validateRegex);
+  document.getElementById('regexPat').addEventListener('input', validateRegex);
+});
+</script>
+</body>
+</html>
