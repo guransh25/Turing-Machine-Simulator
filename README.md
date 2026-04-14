@@ -66,13 +66,13 @@ An interactive, fully visual Turing Machine simulator built as a single-page web
 | 02 | Binary Decrement | Arithmetic | `1100` |
 | 03 | aⁿbⁿ Checker | Context-Free | `aaabbb` |
 | 04 | Equal Strings (w#w) | Comparison | `abb#abb` |
-| 05 | Palindrome Check | Recognition | `abba` |
+| 05 | Divisible by 3 | Arithmetic | `101` |
 | 06 | Even Number of Zeros | DFA-style | `10100` |
 | 07 | Unary Addition | Arithmetic | `111+11` |
-| 08 | String Copier | Transform | `abc` |
+| 08 | Binary Addition | Arithmetic | `10+11` |
 | 09 | Bit Flipper | Transform | `10110010` |
 | 10 | 3-State Busy Beaver | Classic TM | *(blank)* |
-| 11 | Binary to Unary | Conversion | `1011` |
+| 11 | Binary Multiply*2 | Arithmetic | `101` |
 
 ### UI / UX
 - **Light mode & Dark mode** toggle (persisted in `localStorage`)
